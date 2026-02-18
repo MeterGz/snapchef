@@ -2163,16 +2163,29 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
   }, [darkMode]);
 
   // ==================== SPOONACULAR RECIPE IMAGES ====================
+  const simplifyRecipeName = (name) => {
+    const skip = new Set(['with','and','the','in','on','a','of','style','creamy','spicy','classic','easy','quick','simple','homemade','fresh','roasted','grilled','baked','fried','crispy','smoky','zesty','tangy','savory','hearty','loaded','ultimate','best','perfect','delicious']);
+    return name.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !skip.has(w)).slice(0, 3).join(' ');
+  };
+
   const fetchRecipeImages = async (recipeList) => {
     if (recipeList.length === 0) return;
     const results = {};
     await Promise.all(recipeList.map(async (recipe) => {
       if (!recipe?.name) return;
       try {
-        const res = await fetch(`/api/spoonacular?query=${encodeURIComponent(recipe.name)}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.results?.[0]?.image) {
+        // Try full name first
+        let res = await fetch(`/api/spoonacular?query=${encodeURIComponent(recipe.name)}`);
+        let data = res.ok ? await res.json() : null;
+        // If no result, try simplified keywords
+        if (!data?.results?.[0]?.image) {
+          const simple = simplifyRecipeName(recipe.name);
+          if (simple && simple !== recipe.name.toLowerCase()) {
+            res = await fetch(`/api/spoonacular?query=${encodeURIComponent(simple)}`);
+            data = res.ok ? await res.json() : null;
+          }
+        }
+        if (data?.results?.[0]?.image) {
           results[recipe.name] = data.results[0].image;
         }
       } catch (e) {
