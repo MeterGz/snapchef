@@ -2168,29 +2168,45 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
     return name.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !skip.has(w)).slice(0, 3).join(' ');
   };
 
+  const getCoreFood = (name) => {
+    const dishes = ['pasta','pizza','burger','stir fry','stir-fry','soup','salad','curry','taco','sushi','sandwich','steak','rice bowl','rice','noodle','scramble','omelette','pancake','waffle','wrap','bowl','chili','stew','casserole','pie','cake','toast','frittata'];
+    const lower = name.toLowerCase();
+    for (const d of dishes) {
+      if (lower.includes(d)) return d.replace('-', ' ');
+    }
+    // Fallback: grab the last meaningful word (usually the dish type)
+    const skip = new Set(['with','and','the','in','on','a','of','style']);
+    const words = lower.split(/\s+/).filter(w => w.length > 2 && !skip.has(w));
+    return words.slice(-2).join(' ');
+  };
+
+  const searchSpoonacular = async (query) => {
+    try {
+      const res = await fetch(`/api/spoonacular?query=${encodeURIComponent(query)}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data?.results?.[0]?.image || null;
+    } catch (e) { return null; }
+  };
+
   const fetchRecipeImages = async (recipeList) => {
     if (recipeList.length === 0) return;
     const results = {};
     await Promise.all(recipeList.map(async (recipe) => {
       if (!recipe?.name) return;
-      try {
-        // Try full name first
-        let res = await fetch(`/api/spoonacular?query=${encodeURIComponent(recipe.name)}`);
-        let data = res.ok ? await res.json() : null;
-        // If no result, try simplified keywords
-        if (!data?.results?.[0]?.image) {
-          const simple = simplifyRecipeName(recipe.name);
-          if (simple && simple !== recipe.name.toLowerCase()) {
-            res = await fetch(`/api/spoonacular?query=${encodeURIComponent(simple)}`);
-            data = res.ok ? await res.json() : null;
-          }
-        }
-        if (data?.results?.[0]?.image) {
-          results[recipe.name] = data.results[0].image;
-        }
-      } catch (e) {
-        console.log('Image fetch failed for', recipe.name, e);
+      // Try 1: full name
+      let img = await searchSpoonacular(recipe.name);
+      // Try 2: simplified keywords
+      if (!img) {
+        const simple = simplifyRecipeName(recipe.name);
+        if (simple) img = await searchSpoonacular(simple);
       }
+      // Try 3: core dish type
+      if (!img) {
+        const core = getCoreFood(recipe.name);
+        if (core) img = await searchSpoonacular(core);
+      }
+      if (img) results[recipe.name] = img;
     }));
     if (Object.keys(results).length > 0) {
       setRecipeImages(prev => ({ ...prev, ...results }));
