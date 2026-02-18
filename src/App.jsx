@@ -954,6 +954,7 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
           })
         });
         const data = await response.json();
+        if (data.error) throw new Error(typeof data.error === 'string' ? data.error : data.error.message || 'API error');
         const text = data.content?.[0]?.text?.trim();
         setScanProgress({ current: 1, total: 1 });
         if (!text) throw new Error('Empty');
@@ -1062,7 +1063,15 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
       trackScan();
       generateRecipesFromIngredients(unique);
     } catch (err) {
-      setError('Analysis failed. Please try again.');
+      console.error('Scan error:', err);
+      const msg = err.message || '';
+      if (msg.includes('ANTHROPIC_API_KEY')) {
+        setError('API key not configured. Add ANTHROPIC_API_KEY in Netlify → Site configuration → Environment variables.');
+      } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        setError('Network error — check your internet connection.');
+      } else {
+        setError('Analysis failed: ' + (msg || 'Unknown error. Check browser console for details.'));
+      }
       setStep('capture');
     }
   };
@@ -2154,40 +2163,40 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
   }, [darkMode]);
 
   // ==================== SPOONACULAR RECIPE IMAGES ====================
-  const spoonacularEnabled = true; // Key is handled server-side via /api/spoonacular
-
-  const fetchRecipeImages = useCallback(async (recipeList) => {
-    if (!spoonacularEnabled || recipeList.length === 0) return;
-    const missing = recipeList.filter(r => r.name && !recipeImages[r.name]);
-    if (missing.length === 0) return;
-
-    const newImages = { ...recipeImages };
-    await Promise.all(missing.map(async (recipe) => {
+  const fetchRecipeImages = async (recipeList) => {
+    if (recipeList.length === 0) return;
+    const results = {};
+    await Promise.all(recipeList.map(async (recipe) => {
+      if (!recipe?.name) return;
       try {
         const res = await fetch(`/api/spoonacular?query=${encodeURIComponent(recipe.name)}`);
         if (!res.ok) return;
         const data = await res.json();
         if (data.results?.[0]?.image) {
-          newImages[recipe.name] = data.results[0].image;
+          results[recipe.name] = data.results[0].image;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.log('Image fetch failed for', recipe.name, e);
+      }
     }));
-    setRecipeImages(prev => ({ ...prev, ...newImages }));
-  }, [recipeImages, spoonacularEnabled]);
+    if (Object.keys(results).length > 0) {
+      setRecipeImages(prev => ({ ...prev, ...results }));
+    }
+  };
 
   // Fetch images when recipes change
   useEffect(() => {
-    if (recipes.length > 0 && spoonacularEnabled) {
+    if (recipes.length > 0) {
       fetchRecipeImages(recipes);
     }
-  }, [recipes.length, spoonacularEnabled]);
+  }, [recipes]);
 
   // Also fetch for selected recipe detail
   useEffect(() => {
-    if (selectedRecipe?.name && spoonacularEnabled && !recipeImages[selectedRecipe.name]) {
+    if (selectedRecipe?.name && !recipeImages[selectedRecipe.name]) {
       fetchRecipeImages([selectedRecipe]);
     }
-  }, [selectedRecipe?.name, spoonacularEnabled]);
+  }, [selectedRecipe?.name]);
 
   // Renders a recipe image — Spoonacular photo if available, gradient+emoji fallback
   const renderRecipeImage = (recipe, w, h, imgStyle = {}) => {
