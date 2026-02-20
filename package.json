@@ -1,6 +1,6 @@
 {
   "name": "snapchef",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,9 @@
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "lucide-react": "^0.263.1"
+    "lucide-react": "^0.263.1",
+    "@supabase/supabase-js": "^2.49.0",
+    "stripe": "^17.5.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

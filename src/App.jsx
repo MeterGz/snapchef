@@ -1,32 +1,15 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Camera, Upload, Loader2, ArrowLeft, Clock, Users, Heart, ShoppingCart, Settings, X, Plus, Minus, Play, Pause, Search, Calendar, Star, Moon, Sun, AlertCircle, RotateCcw, Package, History, List, Grid, ZoomIn, ZoomOut, ChevronDown, Award, RefreshCw } from 'lucide-react';
+import { supabase } from './supabase.js';
 
 // ==================== SPOONACULAR CONFIG ====================
-// API key is stored securely in Netlify environment variables
-// Set SPOONACULAR_API_KEY in your Netlify dashboard → Site Settings → Environment Variables
+// API key is stored securely in Vercel environment variables
+// Set SPOONACULAR_API_KEY in your Vercel dashboard → Settings → Environment Variables
 
 // App logo - full icon with gradient background (for header, splash)
+const LOGO_SRC = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAAAAAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCACAAIADASIAAhEBAxEB/8QAHAAAAgMBAQEBAAAAAAAAAAAAAQcAAgYFBAMI/8QAPxAAAQMDAgEHBwoFBQAAAAAAAQACAwQFEQYhMQcSIkFRYXETFBaBk6GxIzJCUlVyg5HB0TZic7KzFSUzNZL/xAAbAQACAwEBAQAAAAAAAAAAAAADBQIEBgEHAP/EADIRAAEDAwAHBwMEAwAAAAAAAAEAAgMEBRESITFBUZGxExRSYXGBoQYi0STB4fAyNHL/2gAMAwEAAhEDEQA/AHdrnWdNp+JnNY2a4yDMcGdmj67z1Du4lJO9Xm4XurdU3Oqknf8ARBOGsHY1vABfG6V9TdLhUVtbIZKiZ3OcfgB2ADYLypVNMZD5L0e12mKhYCRl52n8eXVBWAyoBlXGwVYlNlBsEW7oAZ8F9GhDJUVAiFOKsAoEqKg3VhsiBhQBDJXEQiFFAoLis1XaMINCuAhkqK61gv1fZZg6kmcYScvgecsf6uo94Tl07fKXUVuY6kPMczAkY45cx3Yf0KQwC7GlbzLY7vFVRguiPQmYPpsPH1jiFbo650Dg1x+3okl1tTKphkjGHj58iscrAKAIhHJWjURAyoBlWaEMlRJUaFdoyvRbqOavrYKSlYXzzPDGNHWSnVYeTSz0dI0XRhr6kjpuc4tYD2NA6vFEhgfN/il1dc4aEDtNZO4bUqdLacrdR1/m9EGtYzBlmf8ANjH6nsCbVu5M7DTwgVUc9XJjd8kpaM9wbjC6egrLHZrM9jYjFLNPJI8EbjpkNHgGgYWkTGnpGNbl4yVk7lepppS2Fxa0cNWfdLy+8l9ump3us0klJUgdFsjy+N3cc7jxH5JS19BUW6smpa2IxVER5rmHq/cd6/TqyeotM0d11PbamrpRPEYZY5gcgHGCwkjrBJHrQ6qha4ZjGCiWy+SREsqCXNwfX+lIbCs1qa2seTqmbRyVdha6KSIFzqYuLg8DjzSdwe7rStA/JJqiF8DtF61FHXxVrNOI7No3hRoRAz4IgKcdgqhKtIjuVm7cEGgBWbuVAlRXGRARwiAmxKs5UARARwi0ZUCVFbDkmdEzWtJ5XGXRyCPP1ub+2U/F+W6SolpKiKemkMc0bg5j28WkcCm5YOVCikpGtvUMsFS0Yc+FvPY/vxxHgmFFUsY0secLKX63TTSCeIaQxjG/emQouJar1LdpmmjoKqGkG7qiqZ5MOHYxvE+JwPFdtM2uDhkLKPY6M6LtqiCjs804IBxsSs5XaqZaec280FZT8048tHH5SF/g4cPAgFcfI1gy44C7HE+U6LBkrRk4bk7AL81V5jfXVLodojK8s+7zjj3Le6w5QvP6OSjsrJIo5BzZJpNnEdYaOrxS8G6Q3KqZKQ1mvC2FioZaZrpJRguxq9FMZRARARASclP8ogK7WqNCuEIuUVw8IogItTklWFAFYBQL0UlJUVcoipIJZ5T9GJhcfyCHrKiXADJ2L4AIkdB3gUxrLyY1FdbIKmqrjSTSt5xhdTklncdxuuDc9GXakvEtDT0lRVRh7WNqGwuDHZxvngMZ336kV9NK0BxbtVGO50sjyxrxke3ydSdDbrb7db6bz6tpqc+SZtJIAfmjq4rwSa605GcG6Ru+4x7vgF5LXyd2KkY01ED6ybA5z55CQT3AYC7cOnLLCMRWqhA/oNPxCdjvBG4cz+FhndyBOtzuQ/K8UGtNPTnDLrAD/OHM+IXN5R6qnrNFVUlJPFNH5SLpRvDh84di7lRpmyVAxLaqM+EQafcsrqvQFAy21NTZYZ2VTG84QMeXNkAO4wd844IM4qOycCAdR2ZH5RqQ0YnY4FzcEbcEbeOrolPjKsBhdX0dvOP+qrvYO/ZQ6evABJtVcB/Qd+yzJik8J5Lbd5i8Y5hcsDKu0YRMbo3Fr2lrmnBBGCPEIhVnFEygFYKYVmhDJUVxQFArKAYTklWVZoTx5JaCCm0nDVRsHl6p73SPxucOLQPAAe8pHt4p98mH8EW38T/I5Xbbgyn0Wf8AqNxFKAN7h0K1Sii8l1rorZbqmtqD8lAwvdjicdQ8eCdkgDJWJa0uIA2r4Xu9UNlpvL3CdsTTs1vFzz2NHWsJWcqbA8ijtjnNzs6eXmk+oA/FZ23UlXre+VVdcajzelhHPmlJ6MLOpjc7dvvJXrqNSWO3B9LZLFTVEQBb5zV9Jz+/BGfePAJNLWyPGmHaDd28laWC2QxHs3MMj94BwB7rQ2vlNpJpGsuNFLTA7GSN3lGjxGx+K3dHVQVlMyopJWTQvGWvYcgr83harQGoZLLdWQyOJoKh4ZK08Gk7B4/XuQqW6u0wybWDvRrhYo+zMlPqI3cU0NX386ft8VS2n84dJKIw0v5uNic5wexZii5SH1FZBC62BrZJGsLhNuMnGeC3dfQ0twgENdTxVEQdzg2RuQD2rxQ6as0UrJI7ZSNewhzSIxsRwKYzRVTpMxPAbwx/CSU81GyLRmjJdxz/ACsLyuUMMVXQ1kbQ2acOZIR9Lm4wT374S/HWmXyw/wDFavvSfBqWoCzd1w2qfjy6LVWZxdRsz59Si1EKBWASolMiuLhQBWARATolWVGBPrkx20TbvxP8jkiGp78mX8FW78T+9yv2s5mPp+4We+pP9Zv/AF+xWpWN5V5XxaSe1h2knjY7wyT+gWyXE1la3XfTtZSRDMxaHxD+ZpyB6+HrTepaXwua3bgrJ0T2x1DHv2AjqlOLtSQaB/02meW11RVF9Q0NIywcN+GNm+9ZoIluCQQQQcEHiFMLISyl+M7hhehRQti0tHeSeagVsdE+CLQvdZrdJdLlT0UIPOmdgn6res+oZQBl5DW7SpveGNLnbAn1Z5HTWqilk3e+BjneJaF7FSGNsUTI2DDGNDWjuGyut40YABXmTiCSQl3yvj5K1fek+DUtQEy+V4fJWv70nwaluAsXeDirf7dAtvZT+jZ79SgArBEKwCUEpouIAiAiAjhOiVZQbxT45Mv4Kt34n97kimhM/k31bQ0VqFsucopjE4mKR/zXNJzgnqIJKvW2VrJvvOMhI79C+amHZjODnqmcguKNVWL7Wo/aBT0qsX2tR+0Cf9vF4hzWM7tN4DyKz+stDMukz621ujhq3byRu2ZIe3PUfcUvavTV4o5C2e21We1kZeD6xlOL0psX2rSe0UGqbH1XWk9oldTRUszi8PAPqE4pLjW07AwsLgOIKU9s0jea94DKKSJh+nOPJtH57/kE0dI6Xp7BAXc4TVkgxJNjG31WjqHxXo9KLH9q0ntFBqiyfalJ7RSpaWkpjph4J8yEOsrayrboFhDeAB+V2lFxvSeyfalJ7RT0osgB/wB0pf8A2mPeYfGOYSvu03gPIrLcrg+Stf3pPg1LhavX1/gvVbDHR5dTU4OHkY57jxI7tgsqAsRdJmS1T3MORq6LbWqJ0NK1rxg6+qgGys1QK7W9qWEq8SvBdrdParhPR1QAliOMjg4dTh3FeYNwE79Vaao75TtY4hk8Y+TqAMlueo9re5KW9WK4WaYsrYCGZw2ZnSjf4H9DutTWUb4CSBlv92qlbbrHWMDXHD944+i5YCsBhFoRS0lNCVBlWblABXCGSoohEEoAZV2hCJUSVBlWBKgCsBshEqKAyr8OtQBWDUMlfIAbbqK2CrNahOKjlBo7V19NWh95ukdOCWwjpSv+q39zwCNlsNbdZB5CMthz0pXDojw7fUmlYbTSWmjZDSnpEZe445zj2lN7Xan1LxJIMMHz6JPcrmynaY4zl5+F/9k=';
 const SnapChefLogo = ({ size = 32 }) => (
-  <svg viewBox="0 0 512 512" width={size} height={size} style={{borderRadius: size * 0.22}}>
-    <defs>
-      <linearGradient id="logoBg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{stopColor:'#ef4444'}}/>
-        <stop offset="100%" style={{stopColor:'#f97316'}}/>
-      </linearGradient>
-    </defs>
-    <rect width="512" height="512" rx="112" fill="url(#logoBg)"/>
-    <rect x="106" y="260" width="300" height="185" rx="34" fill="white" opacity="0.95"/>
-    <path d="M216 260 L232 230 L280 230 L296 260" fill="white" opacity="0.95"/>
-    <rect x="335" y="280" width="38" height="14" rx="7" fill="#fbbf24"/>
-    <circle cx="148" cy="285" r="8" fill="#ef4444" opacity="0.5"/>
-    <ellipse cx="256" cy="180" rx="78" ry="58" fill="white"/>
-    <ellipse cx="194" cy="195" rx="40" ry="44" fill="white"/>
-    <ellipse cx="318" cy="195" rx="40" ry="44" fill="white"/>
-    <rect x="194" y="212" width="124" height="52" rx="3" fill="white"/>
-    <circle cx="256" cy="352" r="60" fill="none" stroke="#ef4444" strokeWidth="12"/>
-    <circle cx="256" cy="352" r="34" fill="#ef4444"/>
-    <circle cx="246" cy="341" r="10" fill="white" opacity="0.5"/>
-  </svg>
+  <img src={LOGO_SRC} width={size} height={size} alt="SnapChef" style={{borderRadius: size * 0.22, display:'block'}} />
 );
 
 // App icon - camera+hat silhouette (for buttons, inline use) - uses currentColor
@@ -75,30 +58,74 @@ const RECIPE_VISUALS = [
 // ==================== RESILIENT API UTILITIES ====================
 const safeParseJSON = (rawText) => {
   if (!rawText || typeof rawText !== 'string') throw new Error('Empty response');
-  let s = rawText.trim().replace(/```json\s*/g, '').replace(/\s*```/g, '').trim();
-  try { return JSON.parse(s); } catch (e1) {
-    const oi = s.indexOf('{'), ai = s.indexOf('[');
-    const si = oi === -1 ? ai : ai === -1 ? oi : Math.min(oi, ai);
-    if (si >= 0) {
-      const cl = s[si] === '{' ? '}' : ']';
-      const ei = s.lastIndexOf(cl);
-      if (ei > si) {
-        const c = s.substring(si, ei + 1);
-        try { return JSON.parse(c); } catch (e2) {
-          try { return JSON.parse(c.replace(/,\s*}/g, '}').replace(/,\s*\]/g, ']')); } catch (e3) {}
-        }
+  let s = rawText.trim()
+    .replace(/```json\s*/gi, '').replace(/```javascript\s*/gi, '').replace(/\s*```/g, '')
+    .replace(/^\s*json\s*/i, '') // strip bare "json" prefix
+    .trim();
+  // Attempt 1: direct parse
+  try { return JSON.parse(s); } catch (e1) {}
+  // Attempt 2: extract JSON array or object
+  const ai = s.indexOf('['), oi = s.indexOf('{');
+  const si = ai === -1 ? oi : oi === -1 ? ai : Math.min(ai, oi);
+  if (si >= 0) {
+    const cl = s[si] === '[' ? ']' : '}';
+    const ei = s.lastIndexOf(cl);
+    if (ei > si) {
+      const c = s.substring(si, ei + 1);
+      try { return JSON.parse(c); } catch (e2) {}
+      // Attempt 3: fix common issues (trailing commas, smart quotes)
+      try {
+        const fixed = c
+          .replace(/,\s*}/g, '}').replace(/,\s*\]/g, ']')
+          .replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'")
+          .replace(/\n/g, ' ');
+        return JSON.parse(fixed);
+      } catch (e3) {}
+      // Attempt 4: line-by-line recovery for arrays
+      if (s[si] === '[') {
+        try {
+          const items = [];
+          const objRegex = /\{[^{}]+\}/g;
+          let m;
+          while ((m = objRegex.exec(c)) !== null) {
+            try { items.push(JSON.parse(m[0])); } catch (e) {}
+          }
+          if (items.length > 0) return items;
+        } catch (e4) {}
       }
     }
-    throw new Error('Could not parse JSON from response');
   }
+  throw new Error('Could not parse JSON. Raw start: ' + s.substring(0, 120));
 };
 
-const fetchWithRetry = async (url, options, maxRetries = 1, delayMs = 1500) => {
+// Extract text from API response — handles thinking blocks, multi-content responses
+const extractText = (data) => {
+  if (!data) return '';
+  // If data has an error, throw it
+  if (data.error) {
+    const msg = typeof data.error === 'string' ? data.error : data.error.message || JSON.stringify(data.error);
+    throw new Error(msg);
+  }
+  if (!data.content) return '';
+  // Collect all text blocks (skip thinking blocks)
+  const texts = [];
+  for (const block of data.content) {
+    if (block.type === 'text' && block.text) texts.push(block.text.trim());
+  }
+  return texts.join('\n') || '';
+};
+
+const fetchWithRetry = async (url, options, maxRetries = 1, delayMs = 1500, externalSignal) => {
   for (let i = 0; i <= maxRetries; i++) {
     try {
-      // 25 second timeout - Netlify functions can take a while
+      // 25 second timeout - Vercel functions can take a while
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 25000);
+      // If external signal aborts, abort this request too
+      if (externalSignal) {
+        if (externalSignal.aborted) { clearTimeout(timeout); throw new DOMException('Aborted', 'AbortError'); }
+        externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+      }
       const res = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeout);
       if (res.ok) return res;
@@ -130,6 +157,9 @@ export default function SnapChef() {
   const [prevStep, setPrevStep] = useState(null);
   const [images, setImages] = useState([]); // Array of { src, type }
   const [ingredients, setIngredients] = useState([]);
+  const [ingredientMatch, setIngredientMatch] = useState(100);
+  const [includePantryInMatch, setIncludePantryInMatch] = useState(false);
+  const [expandIngredients, setExpandIngredients] = useState(false);
   const [newIngredient, setNewIngredient] = useState('');
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
   const [recipes, setRecipes] = useState([]);
@@ -141,6 +171,7 @@ export default function SnapChef() {
   const [showSaved, setShowSaved] = useState(false);
   const [shoppingList, setShoppingList] = useState([]);
   const [showShoppingList, setShowShoppingList] = useState(false);
+  const [shopGroupBy, setShopGroupBy] = useState('recipe');
   const [servings, setServings] = useState(1);
   const [originalServings, setOriginalServings] = useState(4);
   const [darkMode, setDarkMode] = useState(true);
@@ -173,6 +204,11 @@ export default function SnapChef() {
   // Pantry Management
   const [pantryItems, setPantryItems] = useState([]);
   const [showAddPantry, setShowAddPantry] = useState(false);
+  const [scanningPantry, setScanningPantry] = useState(false);
+  const [pantryScanReview, setPantryScanReview] = useState(null); // array of scanned item names pending review
+  const pantryFileRef = useRef(null);
+  const pantryCameraRef = useRef(null);
+  const scanAbortRef = useRef(null);
   const [newPantryItem, setNewPantryItem] = useState({ name: '', quantity: '', expiry: '' });
   
   // Recipe Collections
@@ -257,6 +293,126 @@ export default function SnapChef() {
   const [allergens, setAllergens] = useState([]); // ['peanuts', 'dairy', ...]
   const [showSplash, setShowSplash] = useState(true);
 
+  // Scan limit — free users get 2/day, pro gets 25/day
+  const FREE_SCAN_LIMIT = 2;
+  const PRO_SCAN_LIMIT = 25;
+  const [isPro, setIsPro] = useState(false);
+  const [dailyScans, setDailyScans] = useState({ date: '', count: 0 });
+  const [showScanLimit, setShowScanLimit] = useState(false);
+
+  // Auth state (Supabase)
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+
+  // PostHog analytics helper — no-op if PostHog not configured
+  const track = useCallback((event, props = {}) => {
+    try { window.posthog?.capture?.(event, props); } catch (e) {}
+  }, []);
+
+  // Initialize PostHog
+  useEffect(() => {
+    const key = import.meta.env.VITE_POSTHOG_KEY;
+    if (key && window.posthog && !window.posthog.__loaded) {
+      window.posthog.init(key, { api_host: 'https://us.i.posthog.com', person_profiles: 'identified_only' });
+    }
+  }, []);
+
+  // Auth — check session on mount & listen for changes
+  useEffect(() => {
+    if (!supabase) { setAuthLoading(false); return; }
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthUser(session?.user || null);
+      if (session?.user) fetchProfile(session.user.id);
+      setAuthLoading(false);
+    });
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user || null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+        track('user_login', { method: _event });
+      } else {
+        setIsPro(false);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async (userId) => {
+    if (!supabase) return;
+    try {
+      const { data } = await supabase.from('profiles').select('is_pro, display_name').eq('id', userId).single();
+      if (data) {
+        setIsPro(data.is_pro || false);
+        if (data.display_name && !userProfile.name) {
+          setUserProfile(prev => ({ ...prev, name: data.display_name }));
+        }
+      }
+    } catch (e) { console.error('Profile fetch error:', e); }
+  };
+
+  const handleAuth = async (e) => {
+    e?.preventDefault();
+    if (!supabase) { setAuthError('Auth not configured'); return; }
+    setAuthSubmitting(true);
+    setAuthError('');
+    try {
+      let result;
+      if (authMode === 'signup') {
+        result = await supabase.auth.signUp({ email: authEmail, password: authPassword, options: { data: { name: userProfile.name || '' } } });
+        if (result.error) throw result.error;
+        setAuthError('Check your email for a confirmation link!');
+        track('user_signup', { email: authEmail });
+      } else {
+        result = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
+        if (result.error) throw result.error;
+        setShowAuthModal(false);
+        track('user_login', { method: 'password' });
+      }
+    } catch (err) {
+      setAuthError(err.message || 'Authentication failed');
+    }
+    setAuthSubmitting(false);
+  };
+
+  const handleLogout = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setAuthUser(null);
+    setIsPro(false);
+    track('user_logout');
+  };
+
+  const handleUpgrade = async () => {
+    if (!authUser) { setShowAuthModal(true); return; }
+    setUpgrading(true);
+    try {
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: authUser.id, email: authUser.email })
+      });
+      const data = await response.json();
+      if (data.url) {
+        track('upgrade_started');
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Failed to create checkout');
+      }
+    } catch (err) {
+      setError('Upgrade failed: ' + err.message);
+    }
+    setUpgrading(false);
+  };
+
   const [streamingRecipes, setStreamingRecipes] = useState(false);
 
   // Recipe Remix (chat-style recipe modification)
@@ -267,6 +423,7 @@ export default function SnapChef() {
   
   // New improvements
   const [useMetric, setUseMetric] = useState(false);
+  const [language, setLanguage] = useState('English');
   const [tappedRecipeId, setTappedRecipeId] = useState(null); // loading shimmer on card tap
   const [editingIngredient, setEditingIngredient] = useState(null); // { index, amount, item } for inline edit
   const [searchCount, setSearchCount] = useState(0); // for onboarding nudge
@@ -291,6 +448,15 @@ export default function SnapChef() {
   useEffect(() => {
     loadFromStorage();
     const splashTimer = setTimeout(() => setShowSplash(false), 1800);
+    // Check for Stripe redirect
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('upgraded') === 'true') {
+      setTimeout(() => { setIsPro(true); showToast('Welcome to Pro! Enjoy unlimited scans.'); track('upgrade_completed'); }, 2000);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    if (params.get('upgrade_cancelled') === 'true') {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
     // Offline detection
     const goOffline = () => setIsOffline(true);
     const goOnline = () => setIsOffline(false);
@@ -341,7 +507,7 @@ export default function SnapChef() {
           'collections', 'recipe-history', 'recipe-notes', 'recipe-ratings',
           'meal-plan', 'dark-mode', 'scan-history', 'onboarding-done', 'user-profile', 'food-log',
           'user-stats', 'cached-recipes', 'preferred-servings', 'tooltips-seen', 'allergens',
-          'recent-searches', 'use-metric', 'search-count', 'api-cache', 'meal-slots'
+          'recent-searches', 'use-metric', 'search-count', 'api-cache', 'meal-slots', 'language'
         ];
         for (const k of allKeys) { try { await window.storage.delete(k); } catch(e) {} }
         await window.storage.set('fresh-reset-v1', JSON.stringify(true));
@@ -353,14 +519,14 @@ export default function SnapChef() {
         'meal-plan', 'dark-mode', 'scan-history', 'onboarding-done', 'user-profile', 'food-log',
         'user-stats', 'cached-recipes',
         'preferred-servings', 'tooltips-seen', 'allergens', 'recent-searches',
-        'use-metric', 'search-count', 'meal-slots'
+        'use-metric', 'search-count', 'meal-slots', 'language', 'daily-scans'
       ];
       
       const results = await Promise.all(
         keys.map(key => window.storage.get(key).catch(() => null))
       );
 
-      const [saved, prefs, shopping, pantry, colls, history, notes, ratings, plan, dark, scans, onboard, profile, flog, ustats, cached, prefServ, tipsSeen, userAllergens, recentSrch, metric, srchCnt, mealSlotsData] = results;
+      const [saved, prefs, shopping, pantry, colls, history, notes, ratings, plan, dark, scans, onboard, profile, flog, ustats, cached, prefServ, tipsSeen, userAllergens, recentSrch, metric, srchCnt, mealSlotsData, langData, dailyScansData] = results;
 
       if (saved?.value) setSavedRecipes(JSON.parse(saved.value));
       if (prefs?.value) setPreferences(JSON.parse(prefs.value));
@@ -389,7 +555,9 @@ export default function SnapChef() {
       if (userAllergens?.value) setAllergens(JSON.parse(userAllergens.value));
       if (recentSrch?.value) setRecentSearches(JSON.parse(recentSrch.value));
       if (metric?.value) setUseMetric(JSON.parse(metric.value));
+      if (langData?.value) setLanguage(JSON.parse(langData.value));
       if (srchCnt?.value) setSearchCount(JSON.parse(srchCnt.value));
+      if (dailyScansData?.value) setDailyScans(JSON.parse(dailyScansData.value));
       if (mealSlotsData?.value) { const slots = JSON.parse(mealSlotsData.value); if (Array.isArray(slots) && slots.length >= 3) setMealSlots(slots); }
     } catch (err) {
       console.error('Failed to load from storage:', err);
@@ -485,10 +653,17 @@ export default function SnapChef() {
   };
 
   // FIX #11: Contextual back navigation
-  const nav = (s) => { setStep(s); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const nav = (s) => { if (s !== 'results') { setSelectedRecipe(null); setRemixOpen(false); setRemixHistory([]); } setStep(s); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const goBack = () => {
     if (shareCardRecipe) { setShareCardRecipe(null); return; }
     if (remixOpen) { setRemixOpen(false); return; }
+
+    // Cancel any in-flight scan or recipe generation
+    if (step === 'analyzing') {
+      if (scanAbortRef.current) { scanAbortRef.current.abort(); scanAbortRef.current = null; }
+      setStep('capture');
+      return;
+    }
 
     if (showStats) { setShowStats(false); return; }
     if (showScanHistory) { setShowScanHistory(false); return; }
@@ -497,13 +672,20 @@ export default function SnapChef() {
     if (showMealScanner) { setShowMealScanner(false); setMealScanImage(null); setMealScanResult(null); return; }
     if (showTracker) { setShowTracker(false); setTrackerDate(new Date().toISOString().split('T')[0]); return; }
 
-    if (selectedRecipe) { setSelectedRecipe(null); setRemixOpen(false); setRemixHistory([]); return; }
+    if (selectedRecipe) {
+      const goTo = prevStep;
+      setSelectedRecipe(null); setRemixOpen(false); setRemixHistory([]);
+      if (goTo && goTo !== 'results') { nav(goTo); setPrevStep(null); }
+      return;
+    }
     if (showSaved) { setShowSaved(false); return; }
     if (showShoppingList) { setShowShoppingList(false); return; }
     if (showSettings) { setShowSettings(false); return; }
     if (showCookComplete) { setShowCookComplete(false); setCookMode(false); if (wakeLockRef.current) { wakeLockRef.current.release().catch(() => {}); wakeLockRef.current = null; } return; }
     if (cookMode) { exitCookMode(); return; }
     if (step === 'results' && prevStep) {
+      if (scanAbortRef.current) { scanAbortRef.current.abort(); scanAbortRef.current = null; }
+      setStreamingRecipes(false);
       nav(prevStep);
       setRecipes([]);
       return;
@@ -533,6 +715,56 @@ export default function SnapChef() {
     const newPantry = pantryItems.filter(item => item.id !== id);
     setPantryItems(newPantry);
     saveToStorage('pantry-items', newPantry);
+  };
+
+  const handlePantryScan = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    if (!canScan()) { setShowScanLimit(true); return; }
+    setScanningPantry(true);
+    if (!useScan()) { setScanningPantry(false); return; }
+    try {
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+      const compressed = await compressForScan(dataUrl);
+      const response = await fetchWithRetry("/api/anthropic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: getScanModel(),
+          max_tokens: 800,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: 'image/jpeg', data: compressed.split(',')[1] }},
+              { type: "text", text: `Identify EVERY food item visible in this image. Be thorough. ${langHint} Return ONLY a JSON array of item names: ["item1", "item2", ...]` }
+            ]
+          }]
+        })
+      });
+      const data = await response.json();
+      const text = extractText(data);
+      if (!text) throw new Error('Empty response');
+      const items = safeParseJSON(text);
+      const existing = pantryItems.map(p => p.name.toLowerCase().trim());
+      const newItems = [];
+      items.forEach(name => {
+        const n = (typeof name === 'string' ? name : '').trim();
+        if (n && !existing.includes(n.toLowerCase()) && !newItems.some(x => x.toLowerCase() === n.toLowerCase())) {
+          newItems.push(n);
+        }
+      });
+      if (newItems.length === 0) { showToast('No new items found'); }
+      else { setPantryScanReview(newItems); }
+    } catch (err) {
+      console.error('Pantry scan error:', err);
+      showToast('Scan failed: ' + (err.message || 'Unknown'), 'error');
+    }
+    setScanningPantry(false);
   };
 
   // Collections
@@ -689,6 +921,7 @@ export default function SnapChef() {
   const searchRecipes = async (query) => {
     if (streamingRecipes) return;
     if (isOffline) { setError('No internet connection. Try again when online.'); return; }
+    track('recipe_search', { query: query.trim(), source: 'keyword' });
     // Save to recent searches
     const trimmed = query.trim();
     if (trimmed) {
@@ -720,29 +953,59 @@ export default function SnapChef() {
     setStreamingRecipes(true);
 
     try {
-      const response = await fetchWithRetry("/api/anthropic", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 900,
-          messages: [{
-            role: "user",
-            content: `Find 4 diverse recipes (single serving each) based on this search: "${query}". ${preferences.dietary.length > 0 ? `Dietary: ${preferences.dietary.join(', ')}.` : ''} ${preferences.cuisines.length > 0 ? `Cuisines: ${preferences.cuisines.join(', ')}.` : ''} ${preferences.skillLevel !== 'any' ? `Skill: ${preferences.skillLevel}.` : ''} ${preferences.maxTime !== 'any' ? `Max time: ${preferences.maxTime}.` : ''} ${allergens.length > 0 ? `MUST AVOID these allergens completely: ${allergens.join(', ')}.` : ''} Return ONLY a JSON array, no markdown, no backticks: [{"name": "Recipe Name", "cookTime": "25 mins", "servings": 1, "difficulty": "Easy", "cuisine": "Italian", "ingredientsUsed": ["ingredient1"], "description": "Brief description", "costTier": "budget or moderate or pricey"}]`
-          }]
-        })
-      });
+      // Map app preferences to Spoonacular params
+      const dietMap = { 'Vegetarian': 'vegetarian', 'Vegan': 'vegan', 'Gluten-Free': 'gluten free', 'Keto': 'ketogenic', 'Paleo': 'paleo', 'Pescatarian': 'pescetarian', 'Low-Carb': 'low carb' };
+      const intoleranceMap = { 'Dairy': 'dairy', 'Gluten': 'gluten', 'Nuts': 'tree nut', 'Peanuts': 'peanut', 'Shellfish': 'shellfish', 'Fish': 'seafood', 'Eggs': 'egg', 'Soy': 'soy' };
+
+      const spoonDiet = preferences.dietary.map(d => dietMap[d]).filter(Boolean).join(',');
+      // Dairy-Free goes to intolerances, not diet
+      const extraIntolerances = preferences.dietary.includes('Dairy-Free') ? ['dairy'] : [];
+      const spoonIntolerances = [...allergens.map(a => intoleranceMap[a]).filter(Boolean), ...extraIntolerances].join(',');
+      const spoonCuisine = preferences.cuisines.join(',');
+      const spoonMaxTime = preferences.maxTime && preferences.maxTime !== 'any' ? preferences.maxTime : '';
+
+      const params = new URLSearchParams();
+      params.set('endpoint', 'complexSearch');
+      params.set('query', trimmed);
+      params.set('number', '4');
+      if (spoonDiet) params.set('diet', spoonDiet);
+      if (spoonIntolerances) params.set('intolerances', spoonIntolerances);
+      if (spoonCuisine) params.set('cuisine', spoonCuisine);
+      if (spoonMaxTime) params.set('maxReadyTime', spoonMaxTime);
+
+      const response = await fetchWithRetry(`/api/spoonacular?${params.toString()}`, { method: 'GET' });
       const data = await response.json();
-      const recipesText = (data.content?.[0]?.text || '').trim();
-      if (!recipesText) throw new Error('Empty response');
-      const parsedRecipes = safeParseJSON(recipesText);
-      setRecipes(parsedRecipes);
+
+      if (!data.results || data.results.length === 0) {
+        throw new Error('No recipes found. Try different keywords.');
+      }
+
+      // Map complexSearch results to our format
+      const mappedRecipes = data.results.map(r => ({
+        name: r.title,
+        spoonacularId: r.id,
+        image: r.image,
+        cookTime: r.readyInMinutes ? `${r.readyInMinutes} mins` : null,
+        servings: r.servings || 1,
+        difficulty: r.readyInMinutes ? (r.readyInMinutes <= 20 ? 'Easy' : r.readyInMinutes <= 45 ? 'Medium' : 'Hard') : null,
+        cuisine: r.cuisines?.[0] || null,
+        ingredientsUsed: r.usedIngredients?.map(i => i.name) || [],
+        missedIngredients: r.missedIngredients?.map(i => i.name) || [],
+        usedCount: r.usedIngredientCount || 0,
+        missedCount: r.missedIngredientCount || 0,
+        description: r.summary ? r.summary.replace(/<[^>]*>/g, '').slice(0, 100) + '...' : (r.title || ''),
+        costTier: r.pricePerServing ? (r.pricePerServing < 200 ? 'budget' : r.pricePerServing < 500 ? 'moderate' : 'pricey') : null,
+        estimatedCost: r.pricePerServing ? (r.pricePerServing / 100).toFixed(2) : null,
+        source: 'spoonacular'
+      }));
+
+      setRecipes(mappedRecipes);
       setStreamingRecipes(false);
-      await setCache('search', cacheInput, parsedRecipes);
+      await setCache('search', cacheInput, mappedRecipes);
     } catch (err) {
       console.error('Search error:', err);
       setStreamingRecipes(false);
-      setError('Search failed. Please try again.');
+      setError(err.message || 'Search failed. Please try again.');
       setStep('search');
     }
   };
@@ -752,6 +1015,7 @@ export default function SnapChef() {
     setCookMode(true);
     setCurrentStep(0);
     setSelectedRecipe(recipe);
+    track('cook_started', { recipe: recipe.name });
     setTimerDone(false);
     setShowCookComplete(false);
     setCookStartTime(Date.now());
@@ -780,6 +1044,7 @@ export default function SnapChef() {
   const completeCook = () => {
     pauseTimer();
     trackCook();
+    track('cook_completed', { recipe: selectedRecipe?.name, elapsed: Math.round((Date.now() - (cookStartTime || Date.now())) / 1000) });
     pantryAutoDeduct(selectedRecipe);
     playTimerSound();
     const elapsed = Math.round((Date.now() - (cookStartTime || Date.now())) / 1000);
@@ -922,6 +1187,9 @@ export default function SnapChef() {
   };
 
   // Detailed prompt for ingredient identification — structured zone-by-zone scan
+  // Language instruction for AI prompts
+  const langHint = language !== 'English' ? ` IMPORTANT: Respond with ALL text content (recipe names, descriptions, ingredient names, instructions, tips) in ${language}.` : '';
+
   const SCAN_PROMPT = `Identify EVERY food item visible in this image. Be thorough — check all areas including edges, shelves, doors, and behind other items. Read visible labels/brands.
 
 RULES:
@@ -931,17 +1199,26 @@ RULES:
 - Skip non-food items
 - If you can see it, list it
 
-Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
+${langHint} Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
 
   // Analyze images — single call for 1 photo, parallel for multiple
   const analyzeAllImages = async () => {
     if (images.length === 0) return;
     if (step === 'analyzing') return;
     if (isOffline) { setError('No internet — can\'t scan photos offline.'); return; }
+    // Check scan limit
+    if (!canScan()) { setShowScanLimit(true); return; }
+    // Cancel any previous scan
+    if (scanAbortRef.current) scanAbortRef.current.abort();
+    const abortCtrl = new AbortController();
+    scanAbortRef.current = abortCtrl;
     setPrevStep('capture');
     setStep('analyzing');
     setError('');
     setScanProgress({ current: 0, total: images.length });
+    // Use scan credit
+    if (!useScan()) { setStep('capture'); return; }
+    const scanModel = getScanModel();
 
     try {
       const scanImages = await Promise.all(images.map(img => compressForScan(img.src)));
@@ -957,7 +1234,7 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: scanModel,
             max_tokens: 800,
             messages: [{
               role: "user",
@@ -967,10 +1244,10 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
               ]
             }]
           })
-        });
+        }, 1, 1500, abortCtrl.signal);
         const data = await response.json();
         if (data.error) throw new Error(typeof data.error === 'string' ? data.error : data.error.message || 'API error');
-        const text = data.content?.[0]?.text?.trim();
+        const text = extractText(data);
         setScanProgress({ current: 1, total: 1 });
         if (!text) throw new Error('Empty');
         allIngredients = safeParseJSON(text);
@@ -982,7 +1259,7 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              model: "claude-sonnet-4-20250514",
+              model: scanModel,
               max_tokens: 800,
               messages: [{
                 role: "user",
@@ -992,12 +1269,12 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
                 ]
               }]
             })
-          })
+          }, 1, 1500, abortCtrl.signal)
           .then(res => res.json())
           .then(data => {
             completed++;
             setScanProgress({ current: completed, total: images.length });
-            const text = data.content?.[0]?.text?.trim();
+            const text = extractText(data);
             return text ? safeParseJSON(text) : [];
           })
           .catch(() => { completed++; setScanProgress({ current: completed, total: images.length }); return []; })
@@ -1055,6 +1332,7 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
 
       const unique = smartDedup(allIngredients);
       setIngredients(unique);
+      setExpandIngredients(false);
 
       // Save scan to history
       try {
@@ -1076,12 +1354,17 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
       }
 
       trackScan();
+      // Quick scan — skip review, go straight to recipes
       generateRecipesFromIngredients(unique);
     } catch (err) {
+      if (err.name === 'AbortError' || err.message?.includes('Aborted')) {
+        // User cancelled — silently go back
+        return;
+      }
       console.error('Scan error:', err);
       const msg = err.message || '';
       if (msg.includes('ANTHROPIC_API_KEY')) {
-        setError('API key not configured. Add ANTHROPIC_API_KEY in Netlify → Site configuration → Environment variables.');
+        setError('API key not configured. Add ANTHROPIC_API_KEY in Vercel → Settings → Environment Variables.');
       } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
         setError('Network error — check your internet connection.');
       } else {
@@ -1097,10 +1380,14 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
       setError('Add at least one ingredient to find recipes.');
       return;
     }
-    setPrevStep('review');
+    if (scanAbortRef.current) scanAbortRef.current.abort();
+    const abortCtrl = new AbortController();
+    scanAbortRef.current = abortCtrl;
+    if (step !== 'review') setPrevStep('capture');
+    else setPrevStep('review');
 
-    // Cache key: sorted ingredients + preferences
-    const cacheInput = [...ingredientList, `|${preferences.dietary.join(',')}`, `|${preferences.cuisines.join(',')}`, `|${preferences.skillLevel}`, `|${preferences.maxTime}`, `|${allergens.join(',')}`];
+    // Cache key: sorted ingredients + preferences + match %
+    const cacheInput = [...ingredientList, `|${preferences.dietary.join(',')}`, `|${preferences.cuisines.join(',')}`, `|${preferences.skillLevel}`, `|${preferences.maxTime}`, `|${allergens.join(',')}`, `|match${ingredientMatch}`, `|pantry${includePantryInMatch ? pantryItems.map(p=>p.name).join(',') : 'off'}`];
     resultSourceRef.current = { type: 'scan' };
     const cached = await getCache('recipes', cacheInput);
     if (cached) {
@@ -1115,42 +1402,73 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
     setStreamingRecipes(true);
 
     try {
-      let constraints = '';
-      if (preferences.dietary.length > 0) constraints += `Dietary: ${preferences.dietary.join(', ')}. `;
-      if (preferences.cuisines.length > 0) constraints += `Preferred cuisines: ${preferences.cuisines.join(', ')}. `;
-      if (preferences.skillLevel && preferences.skillLevel !== 'any') constraints += `Skill level: ${preferences.skillLevel}. `;
-      if (preferences.maxTime && preferences.maxTime !== 'any') constraints += `Max cook time: ${preferences.maxTime} minutes. `;
-      if (allergens.length > 0) constraints += `MUST AVOID allergens: ${allergens.join(', ')}. `;
+      // Combine scanned ingredients with pantry if toggled
+      let allIngredients = [...ingredientList];
+      if (includePantryInMatch && pantryItems.length > 0) {
+        allIngredients = [...allIngredients, ...pantryItems.map(p => p.name)];
+      }
 
-      const recipeResponse = await fetchWithRetry("/api/anthropic", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 900,
-          messages: [{
-            role: "user",
-            content: `Ingredients: ${ingredientList.join(', ')}. ${constraints}Generate 4 diverse recipes (single serving each). Return ONLY a JSON array, no markdown, no backticks: [{"name": "Recipe Name", "cookTime": "25 mins", "servings": 1, "difficulty": "Easy", "cuisine": "Italian", "ingredientsUsed": ["ing1"], "description": "Brief desc", "costTier": "budget or moderate or pricey"}]`
-          }]
-        })
-      });
-      const recipeData = await recipeResponse.json();
-      const recipesText = (recipeData.content?.[0]?.text || '').trim();
-      if (!recipesText) throw new Error('Empty response');
-      const parsedRecipes = safeParseJSON(recipesText);
-      setRecipes(parsedRecipes);
+      // Use Spoonacular findByIngredients
+      const ranking = ingredientMatch >= 75 ? 1 : 2; // 1=maximize used, 2=minimize missing
+      const spoonUrl = `/api/spoonacular?endpoint=findByIngredients&ingredients=${encodeURIComponent(allIngredients.join(','))}&number=8&ranking=${ranking}&ignorePantry=true`;
+      
+      const response = await fetchWithRetry(spoonUrl, { method: 'GET' }, 1, 1500, abortCtrl.signal);
+      const spoonRecipes = await response.json();
+
+      if (!Array.isArray(spoonRecipes) || spoonRecipes.length === 0) {
+        throw new Error('No recipes found for these ingredients');
+      }
+
+      // Filter by match % — calculate what percentage of recipe ingredients are from user's list
+      let filtered = spoonRecipes;
+      if (ingredientMatch >= 100) {
+        filtered = spoonRecipes.filter(r => r.missedIngredientCount === 0);
+      } else if (ingredientMatch >= 75) {
+        filtered = spoonRecipes.filter(r => {
+          const total = r.usedIngredientCount + r.missedIngredientCount;
+          return total > 0 && (r.usedIngredientCount / total) >= 0.6;
+        });
+      }
+      // If strict filter removed everything, fall back to all results
+      if (filtered.length === 0) filtered = spoonRecipes;
+
+      // Take top 4
+      const top4 = filtered.slice(0, 4);
+
+      // Map Spoonacular response to our recipe card format
+      const mappedRecipes = top4.map(r => ({
+        name: r.title,
+        spoonacularId: r.id,
+        image: r.image,
+        cookTime: null, // filled when user taps for details
+        servings: 1,
+        difficulty: null,
+        cuisine: null,
+        ingredientsUsed: r.usedIngredients?.map(i => i.name) || [],
+        missedIngredients: r.missedIngredients?.map(i => i.name) || [],
+        usedCount: r.usedIngredientCount || 0,
+        missedCount: r.missedIngredientCount || 0,
+        description: `Uses ${r.usedIngredientCount || 0} of your ingredients${r.missedIngredientCount > 0 ? `, needs ${r.missedIngredientCount} more` : ''}`,
+        costTier: null,
+        source: 'spoonacular'
+      }));
+
+      setRecipes(mappedRecipes);
       setStreamingRecipes(false);
 
-      // Count search for preference nudge
       const newCount = searchCount + 1;
       setSearchCount(newCount);
       saveToStorage('search-count', newCount);
       if (newCount === 3 && preferences.dietary.length === 0 && preferences.cuisines.length === 0) setShowPrefNudge(true);
 
-      await setCache('recipes', cacheInput, parsedRecipes);
+      await setCache('recipes', cacheInput, mappedRecipes);
     } catch (err) {
-      console.error('Recipe generation error:', err);
-      setError('Failed to generate recipes. Please try again.');
+      if (err.name === 'AbortError' || err.message?.includes('Aborted')) {
+        setStreamingRecipes(false);
+        return;
+      }
+      console.error('Recipe search error:', err);
+      setError('Failed to find recipes: ' + (err.message || 'Unknown'));
       setStreamingRecipes(false);
     }
   };
@@ -1165,7 +1483,7 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
     const src = resultSourceRef.current;
     if (!src) return;
     const excludeNames = recipes.map(r => r.name);
-    const excludeHint = excludeNames.length > 0 ? ` Do NOT suggest any of these recipes: ${excludeNames.join(', ')}. Suggest completely different dishes.` : '';
+    const excludeIds = recipes.filter(r => r.spoonacularId).map(r => r.spoonacularId);
 
     setRecipes([]);
     setStreamingRecipes(true);
@@ -1173,45 +1491,83 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
 
     try {
       if (src.type === 'search') {
-        const response = await fetchWithRetry("/api/anthropic", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 900,
-            messages: [{
-              role: "user",
-              content: `Find 4 diverse recipes (single serving each) based on this search: "${src.query}". ${preferences.dietary.length > 0 ? `Dietary: ${preferences.dietary.join(', ')}.` : ''} ${preferences.cuisines.length > 0 ? `Cuisines: ${preferences.cuisines.join(', ')}.` : ''} ${preferences.skillLevel !== 'any' ? `Skill: ${preferences.skillLevel}.` : ''} ${preferences.maxTime !== 'any' ? `Max time: ${preferences.maxTime}.` : ''} ${allergens.length > 0 ? `MUST AVOID these allergens completely: ${allergens.join(', ')}.` : ''}${excludeHint} Return ONLY a JSON array, no markdown, no backticks: [{"name": "Recipe Name", "cookTime": "25 mins", "servings": 1, "difficulty": "Easy", "cuisine": "Italian", "ingredientsUsed": ["ingredient1"], "description": "Brief description", "costTier": "budget or moderate or pricey"}]`
-            }]
-          })
-        });
+        // Search-based: use Spoonacular complexSearch with offset
+        const dietMap = { 'Vegetarian': 'vegetarian', 'Vegan': 'vegan', 'Gluten-Free': 'gluten free', 'Keto': 'ketogenic', 'Paleo': 'paleo', 'Pescatarian': 'pescetarian', 'Low-Carb': 'low carb' };
+        const intoleranceMap = { 'Dairy': 'dairy', 'Gluten': 'gluten', 'Nuts': 'tree nut', 'Peanuts': 'peanut', 'Shellfish': 'shellfish', 'Fish': 'seafood', 'Eggs': 'egg', 'Soy': 'soy' };
+        const spoonDiet = preferences.dietary.map(d => dietMap[d]).filter(Boolean).join(',');
+        const extraIntolerances = preferences.dietary.includes('Dairy-Free') ? ['dairy'] : [];
+        const spoonIntolerances = [...allergens.map(a => intoleranceMap[a]).filter(Boolean), ...extraIntolerances].join(',');
+        const spoonCuisine = preferences.cuisines.join(',');
+        const spoonMaxTime = preferences.maxTime && preferences.maxTime !== 'any' ? preferences.maxTime : '';
+
+        const params = new URLSearchParams();
+        params.set('endpoint', 'complexSearch');
+        params.set('query', src.query);
+        params.set('number', '4');
+        params.set('offset', String(excludeIds.length || 4)); // Skip already shown
+        if (spoonDiet) params.set('diet', spoonDiet);
+        if (spoonIntolerances) params.set('intolerances', spoonIntolerances);
+        if (spoonCuisine) params.set('cuisine', spoonCuisine);
+        if (spoonMaxTime) params.set('maxReadyTime', spoonMaxTime);
+
+        const response = await fetchWithRetry(`/api/spoonacular?${params.toString()}`, { method: 'GET' });
         const data = await response.json();
-        const text = (data.content?.[0]?.text || '').trim();
-        if (!text) throw new Error('Empty');
-        setRecipes(safeParseJSON(text));
+        if (!data.results || data.results.length === 0) throw new Error('No more recipes found');
+
+        const mappedRecipes = data.results.filter(r => !excludeIds.includes(r.id)).slice(0, 4).map(r => ({
+          name: r.title,
+          spoonacularId: r.id,
+          image: r.image,
+          cookTime: r.readyInMinutes ? `${r.readyInMinutes} mins` : null,
+          servings: r.servings || 1,
+          difficulty: r.readyInMinutes ? (r.readyInMinutes <= 20 ? 'Easy' : r.readyInMinutes <= 45 ? 'Medium' : 'Hard') : null,
+          cuisine: r.cuisines?.[0] || null,
+          ingredientsUsed: r.usedIngredients?.map(i => i.name) || [],
+          description: r.summary ? r.summary.replace(/<[^>]*>/g, '').slice(0, 100) + '...' : r.title,
+          costTier: r.pricePerServing ? (r.pricePerServing < 200 ? 'budget' : r.pricePerServing < 500 ? 'moderate' : 'pricey') : null,
+          estimatedCost: r.pricePerServing ? (r.pricePerServing / 100).toFixed(2) : null,
+          source: 'spoonacular'
+        }));
+        if (mappedRecipes.length === 0) throw new Error('No more new recipes found');
+        setRecipes(mappedRecipes);
       } else {
-        let constraints = '';
-        if (preferences.dietary.length > 0) constraints += `Dietary: ${preferences.dietary.join(', ')}. `;
-        if (preferences.cuisines.length > 0) constraints += `Preferred cuisines: ${preferences.cuisines.join(', ')}. `;
-        if (preferences.skillLevel && preferences.skillLevel !== 'any') constraints += `Skill level: ${preferences.skillLevel}. `;
-        if (preferences.maxTime && preferences.maxTime !== 'any') constraints += `Max cook time: ${preferences.maxTime} minutes. `;
-        if (allergens.length > 0) constraints += `MUST AVOID allergens: ${allergens.join(', ')}. `;
-        const response = await fetchWithRetry("/api/anthropic", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 900,
-            messages: [{
-              role: "user",
-              content: `Ingredients: ${ingredients.join(', ')}. ${constraints}${excludeHint} Generate 4 diverse recipes (single serving each). Return ONLY a JSON array, no markdown, no backticks: [{"name": "Recipe Name", "cookTime": "25 mins", "servings": 1, "difficulty": "Easy", "cuisine": "Italian", "ingredientsUsed": ["ing1"], "description": "Brief desc", "costTier": "budget or moderate or pricey"}]`
-            }]
-          })
-        });
-        const data = await response.json();
-        const text = (data.content?.[0]?.text || '').trim();
-        if (!text) throw new Error('Empty');
-        setRecipes(safeParseJSON(text));
+        // Scan-based: use Spoonacular with offset to get different results
+        let allIngredients = [...ingredients];
+        if (includePantryInMatch && pantryItems.length > 0) {
+          allIngredients = [...allIngredients, ...pantryItems.map(p => p.name)];
+        }
+        const ranking = ingredientMatch >= 75 ? 1 : 2;
+        const spoonUrl = `/api/spoonacular?endpoint=findByIngredients&ingredients=${encodeURIComponent(allIngredients.join(','))}&number=12&ranking=${ranking}&ignorePantry=true`;
+        const response = await fetchWithRetry(spoonUrl, { method: 'GET' });
+        const spoonRecipes = await response.json();
+
+        if (!Array.isArray(spoonRecipes) || spoonRecipes.length === 0) {
+          throw new Error('No more recipes found');
+        }
+
+        // Filter out already shown recipes
+        const fresh = spoonRecipes.filter(r => !excludeIds.includes(r.id));
+        const top4 = fresh.slice(0, 4);
+
+        if (top4.length === 0) throw new Error('No more new recipes found for these ingredients');
+
+        const mappedRecipes = top4.map(r => ({
+          name: r.title,
+          spoonacularId: r.id,
+          image: r.image,
+          cookTime: null,
+          servings: 1,
+          difficulty: null,
+          cuisine: null,
+          ingredientsUsed: r.usedIngredients?.map(i => i.name) || [],
+          missedIngredients: r.missedIngredients?.map(i => i.name) || [],
+          usedCount: r.usedIngredientCount || 0,
+          missedCount: r.missedIngredientCount || 0,
+          description: `Uses ${r.usedIngredientCount || 0} of your ingredients${r.missedIngredientCount > 0 ? `, needs ${r.missedIngredientCount} more` : ''}`,
+          costTier: null,
+          source: 'spoonacular'
+        }));
+        setRecipes(mappedRecipes);
       }
     } catch (err) {
       console.error('Regenerate error:', err);
@@ -1236,9 +1592,9 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
     setNewIngredient('');
   };
 
-  // FIX #4: getFullRecipe — single API call for everything
+  // getFullRecipe — uses Spoonacular for ingredient-scan recipes, Claude for search recipes
   const getFullRecipe = async (recipe) => {
-    if (selectedRecipe?.loading) return; // prevent double-tap
+    if (selectedRecipe?.loading) return;
     setTappedRecipeId(recipe.name);
     setSelectedRecipe({ ...recipe, loading: true });
     setEditingIngredient(null);
@@ -1248,9 +1604,12 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
     trackRecipeView();
     setServings(recipe.servings || 1);
     setOriginalServings(recipe.servings || 1);
+    if (step !== 'results') {
+      setPrevStep(step);
+      setStep('results');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // Check cache first — recipe details don't change
     const cached = await getCache('fullrecipe', recipe.name);
     if (cached) {
       setSelectedRecipe({ ...recipe, ...cached, loading: false });
@@ -1259,31 +1618,104 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
     }
     if (isOffline) { setSelectedRecipe(null); setTappedRecipeId(null); setError('No internet — try a cached recipe.'); return; }
 
-    const ingredientContext = ingredients.length > 0
-      ? `Use these available ingredients when possible: ${ingredients.join(', ')}.`
-      : `Use common, easily available ingredients.`;
-
-    // SINGLE call: everything in one shot
     try {
-      const response = await fetchWithRetry("/api/anthropic", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1200,
-          messages: [{            role: "user",
-            content: `Full recipe for "${recipe.name}" (${recipe.cuisine || 'any'} cuisine, ${recipe.servings || 1} servings). ${ingredientContext}${allergens.length > 0 ? ` MUST AVOID these allergens completely — do NOT include any ingredients containing: ${allergens.join(', ')}.` : ''} Return ONLY JSON, no markdown: {"ingredients": [{"amount": "1 cup", "item": "rice"}], "instructions": ["Step 1", "Step 2"], "nutrition": {"calories": 450, "protein": "20g", "carbs": "50g", "fat": "15g"}, "substitutions": {"butter": "olive oil or coconut oil"}, "tips": ["Tip 1"], "costTier": "budget or moderate or pricey"}`
-          }]
-        })
-      });
-      if (!response.ok) throw new Error(`API error ${response.status}`);
-      const data = await response.json();
-      const text = (data.content?.[0]?.text || '').trim();
-      if (!text) throw new Error('Empty response');
-      const fullRecipe = safeParseJSON(text);
-      setSelectedRecipe(prev => ({ ...prev, ...fullRecipe, loading: false }));
-      setTappedRecipeId(null);
-      await setCache('fullrecipe', recipe.name, fullRecipe);
+      if (recipe.spoonacularId) {
+        // Spoonacular recipe — fetch from their API
+        const spoonUrl = `/api/spoonacular?endpoint=recipeInformation&id=${recipe.spoonacularId}&includeNutrition=true`;
+        const response = await fetchWithRetry(spoonUrl, { method: 'GET' });
+        if (!response.ok) throw new Error(`API error ${response.status}`);
+        const data = await response.json();
+
+        // Map Spoonacular response to our format
+        const mappedIngredients = (data.extendedIngredients || []).map(ing => ({
+          amount: `${ing.amount || ''} ${ing.unit || ''}`.trim(),
+          item: ing.name || ing.originalName || ''
+        }));
+
+        const mappedInstructions = [];
+        if (data.analyzedInstructions?.[0]?.steps) {
+          data.analyzedInstructions[0].steps.forEach(s => {
+            mappedInstructions.push(s.step);
+          });
+        } else if (data.instructions) {
+          // Fallback: raw HTML instructions — strip tags and split
+          const stripped = data.instructions.replace(/<[^>]*>/g, '\n').split('\n').map(s => s.trim()).filter(Boolean);
+          mappedInstructions.push(...stripped);
+        }
+
+        // Map nutrition
+        const nutrients = data.nutrition?.nutrients || [];
+        const findNutrient = (name) => {
+          const n = nutrients.find(n => n.name.toLowerCase() === name.toLowerCase());
+          return n ? `${Math.round(n.amount)}${n.unit}` : null;
+        };
+        const nutrition = {
+          calories: findNutrient('Calories')?.replace('kcal','') || null,
+          protein: findNutrient('Protein') || null,
+          carbs: findNutrient('Carbohydrates') || null,
+          fat: findNutrient('Fat') || null
+        };
+
+        // Determine difficulty from readyInMinutes
+        const mins = data.readyInMinutes || 0;
+        const difficulty = mins <= 20 ? 'Easy' : mins <= 45 ? 'Medium' : 'Hard';
+
+        // Cost tier from pricePerServing (cents)
+        const pps = data.pricePerServing || 0;
+        const costTier = pps < 200 ? 'budget' : pps < 500 ? 'moderate' : 'pricey';
+        const estimatedCost = pps > 0 ? (pps / 100).toFixed(2) : null;
+
+        const fullRecipe = {
+          ingredients: mappedIngredients,
+          instructions: mappedInstructions,
+          nutrition: (nutrition.calories || nutrition.protein) ? nutrition : null,
+          substitutions: {},
+          tips: data.dishTypes?.length > 0 ? [`Great as ${data.dishTypes.join(', ')}`] : [],
+          costTier,
+          estimatedCost,
+          cookTime: data.readyInMinutes ? `${data.readyInMinutes} mins` : recipe.cookTime,
+          servings: data.servings || 1,
+          difficulty,
+          cuisine: data.cuisines?.[0] || recipe.cuisine,
+          description: data.summary ? data.summary.replace(/<[^>]*>/g, '').slice(0, 120) + '...' : recipe.description,
+          image: data.image || recipe.image,
+          sourceUrl: data.sourceUrl || null,
+          spoonacularId: recipe.spoonacularId,
+          source: 'spoonacular'
+        };
+
+        setSelectedRecipe(prev => ({ ...prev, ...fullRecipe, loading: false }));
+        setTappedRecipeId(null);
+        setServings(data.servings || 1);
+        setOriginalServings(data.servings || 1);
+        await setCache('fullrecipe', recipe.name, fullRecipe);
+      } else {
+        // Claude-generated recipe (from search) — use Anthropic
+        const ingredientContext = ingredients.length > 0
+          ? `Use these available ingredients when possible: ${ingredients.join(', ')}.`
+          : `Use common, easily available ingredients.`;
+
+        const response = await fetchWithRetry("/api/anthropic", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1200,
+            messages: [{
+              role: "user",
+              content: `Full recipe for "${recipe.name}" (${recipe.cuisine || 'any'} cuisine, ${recipe.servings || 1} servings). ${ingredientContext}${allergens.length > 0 ? ` MUST AVOID these allergens completely — do NOT include any ingredients containing: ${allergens.join(', ')}.` : ''} ${langHint} Return ONLY JSON, no markdown: {"ingredients": [{"amount": "1 cup", "item": "rice"}], "instructions": ["Step 1", "Step 2"], "nutrition": {"calories": 450, "protein": "20g", "carbs": "50g", "fat": "15g"}, "substitutions": {"butter": "olive oil or coconut oil"}, "tips": ["Tip 1"], "costTier": "budget or moderate or pricey"}`
+            }]
+          })
+        });
+        if (!response.ok) throw new Error(`API error ${response.status}`);
+        const data = await response.json();
+        const text = extractText(data);
+        if (!text) throw new Error('Empty response');
+        const fullRecipe = safeParseJSON(text);
+        setSelectedRecipe(prev => ({ ...prev, ...fullRecipe, loading: false }));
+        setTappedRecipeId(null);
+        await setCache('fullrecipe', recipe.name, fullRecipe);
+      }
     } catch (err) {
       console.error('Recipe load error:', err);
       setError('Failed to load recipe. Please try again.');
@@ -1303,9 +1735,9 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
 
   const isRecipeSaved = (recipe) => savedRecipes.some(r => r.name === recipe.name);
 
-  const addToShoppingList = (items) => {
+  const addToShoppingList = (items, recipeName) => {
     const newItems = items.filter(item => !shoppingList.some(existing => existing.item === item.item))
-      .map(item => ({ ...item, checked: false }));
+      .map(item => ({ ...item, checked: false, recipe: recipeName || 'Other' }));
     if (newItems.length === 0) { showToast('All items already on list'); return; }
     const newList = [...shoppingList, ...newItems];
     setShoppingList(newList);
@@ -1435,6 +1867,20 @@ Return ONLY a JSON array: ["ingredient1", "ingredient2", ...]`;
     });
   }, [shoppingList]);
 
+  const recipeGroupedShoppingList = useMemo(() => {
+    const groups = {};
+    shoppingList.forEach(item => {
+      const recipe = item.recipe || 'Other';
+      if (!groups[recipe]) groups[recipe] = [];
+      groups[recipe].push(item);
+    });
+    return Object.entries(groups).sort(([a], [b]) => {
+      if (a === 'Other') return 1;
+      if (b === 'Other') return -1;
+      return a.localeCompare(b);
+    });
+  }, [shoppingList]);
+
   // ==================== MEAL PLAN AUTO-FILL ====================
   const autoFillMealPlan = async () => {
     if (fillingMealPlan) return;
@@ -1498,14 +1944,14 @@ IMPORTANT RULES:
 - All recipes should be practical, real dishes a home cook can make
 - Single serving portions
 
-Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${mealSlots[1]}, ...):
+${langHint} Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${mealSlots[1]}, ...):
 [{"day":1,"meal":"${mealSlots[0]}","name":"Recipe Name","cookTime":"15 mins","servings":1,"difficulty":"Easy","cuisine":"American","description":"Brief desc","calories":450,"protein":30,"carbs":40,"fat":15}]`
           }]
         })
       });
 
       const data = await response.json();
-      const text = (data.content?.[0]?.text || '').trim();
+      const text = extractText(data);
       if (!text) throw new Error('Empty response');
       const meals = safeParseJSON(text);
 
@@ -1653,6 +2099,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
   }, []);
 
   const reset = () => {
+    if (scanAbortRef.current) { scanAbortRef.current.abort(); scanAbortRef.current = null; }
     setStep('home');
     setPrevStep(null);
     setImages([]);
@@ -1779,22 +2226,24 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
   const scanMealPhoto = async () => {
     if (!mealScanImage) return;
     if (isOffline) { showToast('No internet connection', 'error'); return; }
+    if (!canScan()) { setShowScanLimit(true); return; }
     setScanningMeal(true);
     setError('');
+    if (!useScan()) { setScanningMeal(false); return; }
     try {
       const response = await fetchWithRetry("/api/anthropic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 1000,
+          model: getScanModel(), max_tokens: 1000,
           messages: [{ role: "user", content: [
             { type: "image", source: { type: "base64", media_type: mealScanImage.type, data: mealScanImage.src.split(',')[1] }},
-            { type: "text", text: `Analyze this meal photo. Identify every food item and estimate the nutritional content. Return ONLY JSON: {"meal_name": "description", "items": [{"name": "item", "portion": "amount", "calories": 200, "protein": 10, "carbs": 25, "fat": 8}], "total": {"calories": 500, "protein": 30, "carbs": 60, "fat": 20}}` }
+            { type: "text", text: `Analyze this meal photo. Identify every food item and estimate the nutritional content. ${langHint} Return ONLY JSON: {"meal_name": "description", "items": [{"name": "item", "portion": "amount", "calories": 200, "protein": 10, "carbs": 25, "fat": 8}], "total": {"calories": 500, "protein": 30, "carbs": 60, "fat": 20}}` }
           ]}]
         })
       });
       const data = await response.json();
-      const text = data.content?.[0]?.text?.trim();
+      const text = extractText(data);
       if (!text) throw new Error('No response');
       setMealScanResult(safeParseJSON(text));
     } catch (err) { setError('Could not analyze meal. Try a clearer photo.'); }
@@ -1821,11 +2270,11 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 500,
-          messages: [{ role: "user", content: `Suggest 3 drink pairings for "${recipe.name}" (${recipe.description || ''}). Include alcoholic and non-alcoholic. Return ONLY JSON: {"pairings": [{"drink": "name", "type": "wine|beer|cocktail|non-alcoholic", "why": "brief reason"}]}` }]
+          messages: [{ role: "user", content: `Suggest 3 drink pairings for "${recipe.name}" (${recipe.description || ''}). Include alcoholic and non-alcoholic. ${langHint} Return ONLY JSON: {"pairings": [{"drink": "name", "type": "wine|beer|cocktail|non-alcoholic", "why": "brief reason"}]}` }]
         })
       });
       const data = await response.json();
-      const text = data.content?.[0]?.text?.trim();
+      const text = extractText(data);
       if (!text) return;
       const pairings = safeParseJSON(text).pairings;
       setSelectedRecipe(prev => ({ ...prev, pairings }));
@@ -1850,11 +2299,11 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
       const response = await fetchWithRetry("/api/anthropic", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001", max_tokens: 1200,          messages: [{ role: "user", content: `You are a recipe remix assistant. Current recipe: ${currentRecipe}\n\nUser request: "${userMsg}"\n\nModify the recipe based on the request. Return ONLY JSON: {"name": "Updated Name", "description": "brief", "cookTime": "time", "servings": 1, "difficulty": "Easy", "cuisine": "type", "ingredients": [{"amount": "1 cup", "item": "rice"}], "instructions": ["Step 1"], "nutrition": {"calories": 400, "protein": "20g", "carbs": "50g", "fat": "15g"}, "tips": ["Tip"], "costTier": "budget or moderate or pricey", "changesSummary": "Brief description of what changed"}` }]
+          model: "claude-haiku-4-5-20251001", max_tokens: 1200,          messages: [{ role: "user", content: `You are a recipe remix assistant. Current recipe: ${currentRecipe}\n\nUser request: "${userMsg}"\n\nModify the recipe based on the request. ${langHint} Return ONLY JSON: {"name": "Updated Name", "description": "brief", "cookTime": "time", "servings": 1, "difficulty": "Easy", "cuisine": "type", "ingredients": [{"amount": "1 cup", "item": "rice"}], "instructions": ["Step 1"], "nutrition": {"calories": 400, "protein": "20g", "carbs": "50g", "fat": "15g"}, "tips": ["Tip"], "costTier": "budget or moderate or pricey", "changesSummary": "Brief description of what changed"}` }]
         })
       });
       const data = await response.json();
-      const text = data.content?.[0]?.text?.trim();
+      const text = extractText(data);
       if (!text) throw new Error('No response');
       const remixed = safeParseJSON(text);
       setRemixHistory(prev => [...prev, { role: 'assistant', text: remixed.changesSummary || 'Recipe updated!' }]);
@@ -1965,8 +2414,28 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
     });
   };
 
-  const trackScan = () => updateStats({ totalScans: (stats.totalScans || 0) + 1 });
-  const trackRecipeView = () => updateStats({ totalRecipesViewed: (stats.totalRecipesViewed || 0) + 1 });
+  // Scan limit helpers
+  const getScanModel = () => isPro ? 'claude-sonnet-4-20250514' : 'claude-haiku-4-5-20251001';
+  const getScanLimit = () => isPro ? PRO_SCAN_LIMIT : FREE_SCAN_LIMIT;
+  const getScansRemaining = () => {
+    const limit = getScanLimit();
+    const today = new Date().toISOString().split('T')[0];
+    if (dailyScans.date !== today) return limit;
+    return Math.max(0, limit - dailyScans.count);
+  };
+  const canScan = () => getScansRemaining() > 0;
+  const useScan = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const current = dailyScans.date === today ? dailyScans.count : 0;
+    if (current >= getScanLimit()) { setShowScanLimit(true); return false; }
+    const updated = { date: today, count: current + 1 };
+    setDailyScans(updated);
+    saveToStorage('daily-scans', updated);
+    return true;
+  };
+
+  const trackScan = () => { updateStats({ totalScans: (stats.totalScans || 0) + 1 }); track('scan_completed', { total: (stats.totalScans || 0) + 1, isPro }); };
+  const trackRecipeView = () => { updateStats({ totalRecipesViewed: (stats.totalRecipesViewed || 0) + 1 }); track('recipe_viewed', { total: (stats.totalRecipesViewed || 0) + 1 }); };
   const trackCook = () => updateStats({ totalCooked: (stats.totalCooked || 0) + 1 });
   const trackMealLog = () => updateStats({ totalMealsLogged: (stats.totalMealsLogged || 0) + 1 });
 
@@ -1993,21 +2462,42 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
     const pantryNames = pantryItems.map(p => p.name.toLowerCase().trim());
     const recipeIngredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
     const missing = recipeIngredients.filter(ing => {
-      const name = (typeof ing === 'string' ? ing : ing.name || '').toLowerCase().trim();
+      const name = (typeof ing === 'string' ? ing : ing.item || ing.name || '').toLowerCase().trim();
       return !pantryNames.some(p => p.includes(name) || name.includes(p));
     });
     if (missing.length === 0) { showToast('You have everything!'); return; }
-    const newItems = missing.map(ing => {
-      const name = typeof ing === 'string' ? ing : `${ing.amount || ''} ${ing.unit || ''} ${ing.name || ''}`.trim();
-      return { id: Date.now() + Math.random(), name, checked: false, recipe: recipe.name };
+    // Format to match addToShoppingList expected shape: { amount, item }
+    const formatted = missing.map(ing => {
+      if (typeof ing === 'string') return { amount: '', item: ing };
+      return { amount: ing.amount || '', item: ing.item || ing.name || '' };
     });
-    const combined = [...shoppingList, ...newItems];
-    setShoppingList(combined);
-    saveToStorage('shopping-list', combined);
-    showToast(`${missing.length} item${missing.length > 1 ? 's' : ''} added to shopping list`);
+    addToShoppingList(formatted, recipe.name);
   };
 
   // ==================== PANTRY MATCH ====================
+  // Unified match: checks recipe ingredients against scanned ingredients (+ pantry if toggled)
+  const getMatchPercent = (recipe) => {
+    // Spoonacular provides direct counts
+    if (recipe.source === 'spoonacular' && (recipe.usedCount > 0 || recipe.missedCount > 0)) {
+      const total = recipe.usedCount + recipe.missedCount;
+      return total > 0 ? Math.round((recipe.usedCount / total) * 100) : null;
+    }
+    const used = recipe.ingredientsUsed || recipe.ingredients || [];
+    if (!used.length) return null;
+    const allUserItems = [
+      ...ingredients.map(i => i.toLowerCase().trim()),
+      ...(includePantryInMatch ? pantryItems.map(p => p.name.toLowerCase().trim()) : [])
+    ];
+    if (!allUserItems.length) return null;
+    const unique = [...new Set(allUserItems)];
+    const matched = used.filter(ing => {
+      const name = (typeof ing === 'string' ? ing : ing.item || ing.name || '').toLowerCase().trim();
+      return unique.some(u => name.includes(u) || u.includes(name));
+    });
+    return Math.round((matched.length / used.length) * 100);
+  };
+
+  // Keep getPantryMatchPercent for sort only (pantry-specific)
   const getPantryMatchPercent = (recipe) => {
     if (!recipe?.ingredients || pantryItems.length === 0) return 0;
     const pantryNames = pantryItems.map(p => p.name.toLowerCase().trim());
@@ -2018,21 +2508,6 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
       return pantryNames.some(p => p.includes(name) || name.includes(p));
     });
     return Math.round((matched.length / recipeIngredients.length) * 100);
-  };
-
-  // ==================== SEASONAL SUGGESTIONS ====================
-  const getSeasonalIngredients = () => {
-    const month = new Date().getMonth();
-    const seasons = {
-      winter: ['squash', 'sweet potato', 'kale', 'citrus', 'pomegranate', 'beets', 'parsnips', 'turnips', 'cabbage', 'leeks'],
-      spring: ['asparagus', 'peas', 'artichoke', 'radish', 'strawberry', 'rhubarb', 'spinach', 'arugula', 'fennel', 'mint'],
-      summer: ['tomato', 'zucchini', 'corn', 'peach', 'watermelon', 'berries', 'cucumber', 'basil', 'bell pepper', 'eggplant'],
-      fall: ['pumpkin', 'apple', 'cranberry', 'butternut squash', 'mushroom', 'fig', 'pear', 'brussels sprouts', 'sage', 'cinnamon']
-    };
-    if (month <= 1 || month === 11) return { season: 'Winter', items: seasons.winter };
-    if (month <= 4) return { season: 'Spring', items: seasons.spring };
-    if (month <= 7) return { season: 'Summer', items: seasons.summer };
-    return { season: 'Fall', items: seasons.fall };
   };
 
   // ==================== BUDGET ESTIMATOR ====================
@@ -2178,11 +2653,6 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
   }, [darkMode]);
 
   // ==================== SPOONACULAR RECIPE IMAGES ====================
-  const simplifyRecipeName = (name) => {
-    const skip = new Set(['with','and','the','in','on','a','of','style','creamy','spicy','classic','easy','quick','simple','homemade','fresh','roasted','grilled','baked','fried','crispy','smoky','zesty','tangy','savory','hearty','loaded','ultimate','best','perfect','delicious']);
-    return name.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !skip.has(w)).slice(0, 3).join(' ');
-  };
-
   const getCoreFood = (name) => {
     const dishes = ['pasta','pizza','burger','stir fry','stir-fry','soup','salad','curry','taco','sushi','sandwich','steak','rice bowl','rice','noodle','scramble','omelette','pancake','waffle','wrap','bowl','chili','stew','casserole','pie','cake','toast','frittata'];
     const lower = name.toLowerCase();
@@ -2206,8 +2676,11 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
 
   const fetchRecipeImages = async (recipeList) => {
     if (recipeList.length === 0) return;
+    // Skip recipes that already have direct image URLs (e.g. from Spoonacular findByIngredients)
+    const needImages = recipeList.filter(r => r?.name && !r.image);
+    if (needImages.length === 0) return;
     const results = {};
-    await Promise.all(recipeList.map(async (recipe) => {
+    await Promise.all(needImages.map(async (recipe) => {
       if (!recipe?.name) return;
       // Try 1: core dish type (cheapest, highest hit rate)
       const core = getCoreFood(recipe.name);
@@ -2240,15 +2713,16 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
     const v = getRecipeVisual(recipe);
     const bg = `linear-gradient(135deg, ${v.gradient[0]}, ${v.gradient[1]})`;
     const ht = imgStyle.height || h;
-    const isSmall = ht <= 50;
-    const isMedium = ht > 50 && ht <= 100;
-    const photoUrl = recipeImages[recipe?.name];
+    const isSmall = ht <= 60;
+    const isMedium = ht > 60 && ht <= 160;
+    const photoUrl = recipe?.image || recipeImages[recipe?.name];
     return (
-      <div style={{position:'relative',overflow:'hidden',background: bg, display:'flex',alignItems:'center',justifyContent:'center', ...imgStyle}}>
+      <div style={{position:'relative',overflow:'hidden',background: bg, display:'flex',alignItems:'center',justifyContent:'center', contain:'content', ...imgStyle}}>
         {photoUrl ? (
           <img src={photoUrl} alt={recipe?.name || ''} loading="lazy"
+            onLoad={(e) => { e.target.style.opacity = '1'; }}
             onError={(e) => { e.target.style.display = 'none'; }}
-            style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:3}} />
+            style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:3,opacity:0,transition:'opacity 0.3s ease'}} />
         ) : (
           <span style={{fontSize: isSmall ? 22 : isMedium ? 40 : 56, filter:'drop-shadow(0 3px 6px rgba(0,0,0,0.2))',zIndex:2,position:'relative'}}>{v.emoji}</span>
         )}
@@ -2334,18 +2808,6 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
   };
 
   // ==================== PUSH NOTIFICATION TIMER ====================
-  const requestNotificationPermission = async () => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      await Notification.requestPermission();
-    }
-  };
-
-  const sendTimerNotification = (stepTitle) => {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('Snap Chef Timer Done!', { body: `${stepTitle} is complete!`, icon: '/icon-192.png', badge: '/icon-96.png', vibrate: [200, 100, 200] });
-    }
-    haptic('heavy');
-  };
   const bgClass = darkMode ? 'bg-gray-950' : '';
 
   // Sorted recipe list for results screen
@@ -2380,6 +2842,61 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
   const gradientBtn = useMemo(() => darkMode ? 'linear-gradient(135deg, #BEFF46, #9CDD20)' : 'linear-gradient(135deg, #ef4444, #f97316)', [darkMode]);
   const gradientBtnCol = useMemo(() => darkMode ? '#0C0F14' : 'white', [darkMode]);
   const gradientShadow = useMemo(() => darkMode ? '0 4px 20px rgba(190,255,70,0.2)' : '0 4px 20px rgba(239,68,68,0.25)', [darkMode]);
+  // Extended tokens — reduce darkMode ternaries throughout render
+  const subtleBg2 = useMemo(() => darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6', [darkMode]);
+  const borderLight = useMemo(() => darkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB', [darkMode]);
+  const accentBg = useMemo(() => darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.06)', [darkMode]);
+  const accentBgSoft = useMemo(() => darkMode ? 'rgba(190,255,70,0.06)' : 'rgba(239,68,68,0.04)', [darkMode]);
+  const successCol = useMemo(() => darkMode ? '#34D399' : '#16a34a', [darkMode]);
+  const successBg = useMemo(() => darkMode ? 'rgba(52,211,153,0.1)' : 'rgba(22,163,74,0.06)', [darkMode]);
+  const warnCol = useMemo(() => darkMode ? '#FF8C42' : '#ea580c', [darkMode]);
+  const mutedCol = useMemo(() => darkMode ? '#6B7280' : '#9CA3AF', [darkMode]);
+  const textCol = useMemo(() => darkMode ? '#F9FAFB' : '#111827', [darkMode]);
+  const textMutedCol = useMemo(() => darkMode ? '#9CA3AF' : '#6B7280', [darkMode]);
+  const textDimCol = useMemo(() => darkMode ? '#4A5060' : '#9CA3AF', [darkMode]);
+  const headCol = useMemo(() => darkMode ? '#D1D5DB' : '#374151', [darkMode]);
+  const whiteTextCol = useMemo(() => darkMode ? '#FFFFFF' : '#111827', [darkMode]);
+  const invertDimCol = useMemo(() => darkMode ? '#4A5060' : '#D1D5DB', [darkMode]);
+  const blueCol = useMemo(() => darkMode ? '#5CA4FF' : '#2563eb', [darkMode]);
+  const purpleCol = useMemo(() => darkMode ? '#B07CFF' : '#7c3aed', [darkMode]);
+  const yellowCol = useMemo(() => darkMode ? '#FACC15' : '#A16207', [darkMode]);
+  const redLtCol = useMemo(() => darkMode ? '#FCA5A5' : '#B91C1C', [darkMode]);
+  const orangeHotCol = useMemo(() => darkMode ? '#FF8C42' : '#ea580c', [darkMode]);
+  const greenBrCol = useMemo(() => darkMode ? '#6EE7B7' : '#15803d', [darkMode]);
+  const pinkCol = useMemo(() => darkMode ? '#FF5C72' : '#ef4444', [darkMode]);
+  const accentBg2 = useMemo(() => darkMode ? 'rgba(190,255,70,0.1)' : 'rgba(239,68,68,0.06)', [darkMode]);
+  const accentBg3 = useMemo(() => darkMode ? 'rgba(190,255,70,0.12)' : 'rgba(239,68,68,0.08)', [darkMode]);
+  const accentBg4 = useMemo(() => darkMode ? 'rgba(190,255,70,0.15)' : 'rgba(239,68,68,0.12)', [darkMode]);
+  const greenBg = useMemo(() => darkMode ? 'rgba(52,211,153,0.08)' : 'rgba(22,163,74,0.06)', [darkMode]);
+  const greenBg2 = useMemo(() => darkMode ? 'rgba(52,211,153,0.1)' : 'rgba(22,163,74,0.06)', [darkMode]);
+  const blueBg = useMemo(() => darkMode ? 'rgba(92,164,255,0.08)' : 'rgba(37,99,235,0.06)', [darkMode]);
+  const yellowBg = useMemo(() => darkMode ? 'rgba(250,204,21,0.1)' : 'rgba(234,179,8,0.08)', [darkMode]);
+  const orangeBg = useMemo(() => darkMode ? 'rgba(255,140,66,0.1)' : 'rgba(234,88,12,0.06)', [darkMode]);
+  const redBg = useMemo(() => darkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2', [darkMode]);
+  const redBg2 = useMemo(() => darkMode ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)', [darkMode]);
+  const purpleBg = useMemo(() => darkMode ? 'rgba(176,124,255,0.1)' : 'rgba(124,58,237,0.06)', [darkMode]);
+  const gradientHz = useMemo(() => darkMode ? 'linear-gradient(90deg, #BEFF46, #9CDD20)' : 'linear-gradient(90deg, #ef4444, #f97316)', [darkMode]);
+  const shimmerGrad = useMemo(() => darkMode ? 'linear-gradient(90deg, #1A1F2B 0%, #222838 50%, #1A1F2B 100%)' : 'linear-gradient(90deg, #E5E7EB 0%, #F3F4F6 50%, #E5E7EB 100%)', [darkMode]);
+  const shadowSm = useMemo(() => darkMode ? '0 2px 12px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.04)', [darkMode]);
+  const shadowMd = useMemo(() => darkMode ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 16px rgba(0,0,0,0.06)', [darkMode]);
+  const shadowLg = useMemo(() => darkMode ? '0 4px 24px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,0,0,0.05)', [darkMode]);
+  const shadowXl = useMemo(() => darkMode ? '0 8px 25px rgba(0,0,0,0.4)' : '0 8px 25px rgba(0,0,0,0.08)', [darkMode]);
+  const tabShadow = useMemo(() => darkMode ? '0 -4px 20px rgba(0,0,0,0.3)' : '0 -2px 16px rgba(0,0,0,0.04)', [darkMode]);
+  const btnSecClass = useMemo(() => darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200', [darkMode]);
+  const bgSubtleClass = useMemo(() => darkMode ? 'bg-gray-800' : 'bg-gray-50', [darkMode]);
+  const bgSubtle2Class = useMemo(() => darkMode ? 'bg-gray-800' : 'bg-gray-100', [darkMode]);
+  const settingBtnClass = useMemo(() => darkMode ? 'bg-gray-800 border border-gray-700' : 'border', [darkMode]);
+  const accentBgAlt = useMemo(() => darkMode ? 'rgba(190,255,70,0.08)' : '#F3F4F6', [darkMode]);
+  const amberTextClass = useMemo(() => darkMode ? 'text-amber-300' : 'text-amber-800', [darkMode]);
+  const amberText2Class = useMemo(() => darkMode ? 'text-amber-200' : 'text-amber-900', [darkMode]);
+  const greenBg3 = useMemo(() => darkMode ? 'rgba(52,211,153,0.15)' : 'rgba(22,163,74,0.07)', [darkMode]);
+  const borderHeavy = useMemo(() => darkMode ? 'rgba(255,255,255,0.15)' : '#D1D5DB', [darkMode]);
+  const accentBgStrong = useMemo(() => darkMode ? 'rgba(190,255,70,0.25)' : 'rgba(239,68,68,0.25)', [darkMode]);
+  const toastClass = useMemo(() => darkMode ? 'bg-gray-800/95 text-gray-100 border border-gray-700' : 'bg-white/95 text-gray-900 border border-gray-200', [darkMode]);
+  const bgMidClass = useMemo(() => darkMode ? 'bg-gray-700' : 'bg-gray-200', [darkMode]);
+  const yellowBrCol = useMemo(() => darkMode ? '#FBBF24' : '#D97706', [darkMode]);
+  const darkBgCol = useMemo(() => darkMode ? '#1A1F2B' : '#E5E7EB', [darkMode]);
+  const darkTextCol = useMemo(() => darkMode ? '#111827' : '#FFFFFF', [darkMode]);
 
   // Inline style theme — bypasses CSS completely
   const t = useMemo(() => ({
@@ -2442,11 +2959,51 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
   const fc = {display:'flex',alignItems:'center',justifyContent:'center'};
   const frow = {display:'flex',alignItems:'center'};
   const fcol = {display:'flex',flexDirection:'column'};
-  const sLabel = {fontSize:15,textTransform:'uppercase',letterSpacing:'0.5px',color: darkMode ? '#6B7280' : '#9CA3AF',fontWeight:600,display:'block',marginBottom:12};
+  const sLabel = {fontSize:15,textTransform:'uppercase',letterSpacing:'0.5px',color: mutedCol,fontWeight:600,display:'block',marginBottom:12};
   const overlayBg = {background: darkMode ? "#0C0F14" : "#FFFFFF"};
   // Design tokens — spacing & radius
   const R = { card: 16, inner: 12, sm: 8, xs: 4 };
   const S = { section: 24, card: 20, gap: 12, tight: 8, xs: 4 };
+
+  // ==================== REUSABLE COMPONENTS ====================
+  // ChipGroup — toggle chips for filters, preferences, etc.
+  const ChipGroup = ({ options, selected, onToggle, multi, activeClass, inactiveClass }) => (
+    <div className="flex flex-wrap gap-2">
+      {options.map(opt => {
+        const label = Array.isArray(opt) ? opt[0] : opt;
+        const value = Array.isArray(opt) ? opt[1] : opt;
+        const isActive = multi !== false ? (Array.isArray(selected) && selected.includes(value)) : selected === value;
+        return (
+          <button key={label} onClick={() => onToggle(value)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition ${isActive ? (activeClass || chipActiveClass) : (inactiveClass || chipClass)}`}>{label}</button>
+        );
+      })}
+    </div>
+  );
+
+  // CTAButton — primary gradient action button
+  const CTAButton = ({ onClick, children, disabled, className = "", full = true }) => (
+    <button onClick={onClick} disabled={disabled}
+      className={`card-hover ${full ? 'w-full' : ''} bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl py-3.5 font-bold shadow-lg shadow-red-500/20 transition disabled:opacity-50 ${className}`}>
+      {children}
+    </button>
+  );
+
+  // SectionHead — emoji + title header for settings cards
+  const SectionHead = ({ icon, title }) => (
+    <div style={{...frow,gap:10,paddingBottom:12,borderBottom:`1px solid ${borderCol}`,marginBottom:16}}>
+      <span style={{fontSize:18}}>{icon}</span>
+      <h3 className={`font-bold ${textClass}`} style={{fontSize:16}}>{title}</h3>
+    </div>
+  );
+
+  // SettingsCard — card wrapper for settings sections
+  const SettingsCard = ({ icon, title, children }) => (
+    <div className={`${cardClass} border rounded-2xl`} style={{padding:'20px'}}>
+      <SectionHead icon={icon} title={title} />
+      <div style={{...fcol,gap:20}}>{children}</div>
+    </div>
+  );
   // Type scale: 11 · 13 · 15 · 16 · 18 · 22 · 24 · 28
 
 
@@ -2459,7 +3016,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
       </>}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-        html, body, #root, [data-reactroot] { background: ${darkMode ? '#0C0F14' : '#FFFFFF'} !important; overflow-x: hidden; max-width: 100vw; }
+        html, body, #root, [data-reactroot] { background: ${rootBg} !important; overflow-x: hidden; max-width: 100vw; }
         *, *::before, *::after { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif; box-sizing: border-box; }
         html, body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
         @supports (padding-top: env(safe-area-inset-top)) {
@@ -2571,15 +3128,26 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
         .toast-in { animation: toastIn 0.3s ease-out both; }
         .toast-out { animation: toastOut 0.25s ease-in both; }
         .card-hover { transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1); cursor: pointer; position: relative; }
-        .card-hover:hover { transform: translateY(-3px); box-shadow: ${darkMode ? '0 8px 25px rgba(0,0,0,0.4)' : '0 8px 25px rgba(0,0,0,0.08)'}; }
+        .card-hover:hover { transform: translateY(-3px); box-shadow: ${shadowXl}; }
         .card-hover:active { transform: translateY(0) scale(0.97); transition-duration: 0.1s; }
         .screen-enter { animation: screenSlideIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
         .screen-fade { animation: screenFadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .skel { background: ${darkMode ? 'linear-gradient(90deg, #1A1F2B 0%, #222838 50%, #1A1F2B 100%)' : 'linear-gradient(90deg, #E5E7EB 0%, #F3F4F6 50%, #E5E7EB 100%)'} ; background-size: 800px 100%; animation: skeletonShimmer 1.5s ease-in-out infinite; border-radius: 8px; }
+        .skel { background: ${shimmerGrad} ; background-size: 800px 100%; animation: skeletonShimmer 1.5s ease-in-out infinite; border-radius: 8px; }
         @media (pointer: coarse) { .card-hover:active { transform: scale(0.97); } .touch-target { min-height: 44px; min-width: 44px; } }
         * { transition-property: background-color, border-color, color, box-shadow; transition-duration: 0.15s; }
+        /* Performance: GPU-accelerate animated elements */
+        .card-hover, .screen-enter, .screen-fade, .fade-up, .bounce-in { will-change: transform, opacity; }
+        img[loading="lazy"] { content-visibility: auto; }
+        /* Smooth scrolling on iOS */
+        .overflow-y-auto, .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+        /* Better tap states for mobile */
+        button, [role="button"] { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        /* Prevent text selection on UI elements */
+        .no-select { user-select: none; -webkit-user-select: none; }
+        /* Image shimmer while loading */
+        .img-shimmer { background: ${shimmerGrad}; background-size: 800px 100%; animation: skeletonShimmer 1.5s ease-in-out infinite; }
       `}</style>
 
       {/* ==================== SPLASH SCREEN ==================== */}
@@ -2593,11 +3161,11 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             <SnapChefLogo size={80} />
           </div>
           <div style={{animation:'splashText 1.2s ease-out both',textAlign:'center'}}>
-            <h1 style={{fontSize:28,fontWeight:800,letterSpacing:'-0.8px',color: darkMode ? '#F9FAFB' : '#111827',fontFamily:'Manrope, sans-serif'}}>Snap Chef</h1>
+            <h1 style={{fontSize:28,fontWeight:800,letterSpacing:'-0.8px',color: textCol,fontFamily:'Manrope, sans-serif'}}>Snap Chef</h1>
             <p style={{fontSize:15,marginTop:4,color: inactiveCol,fontFamily:'Manrope, sans-serif'}}>Cook smarter, not harder</p>
           </div>
-          <div style={{width:120,height:3,borderRadius:2,background: darkMode ? 'rgba(255,255,255,0.05)' : '#F3F4F6',overflow:'hidden',marginTop:8}}>
-            <div style={{height:'100%',borderRadius:2,background: darkMode ? 'linear-gradient(90deg, #BEFF46, #9CDD20)' : 'linear-gradient(90deg, #ef4444, #f97316)',animation:'splashBar 1.4s ease-out both'}} />
+          <div style={{width:120,height:3,borderRadius:2,background: subtleBg2,overflow:'hidden',marginTop:8}}>
+            <div style={{height:'100%',borderRadius:2,background: gradientHz,animation:'splashBar 1.4s ease-out both'}} />
           </div>
         </div>
       )}
@@ -2605,7 +3173,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
       <div className={`safe-top ${darkMode ? 'bg-gray-900/80 border-gray-800' : ''} shadow-sm border-b backdrop-blur-lg sticky top-0 z-40`} style={{...t.headerBg, borderBottomColor: darkMode ? undefined : '#E5E7EB', position:'sticky',top:0}}>
         <div className="max-w-2xl mx-auto flex items-center justify-between" style={{padding:'14px 20px'}}>
           {showBackButton ? (
-            <button aria-label="Go back" onClick={goBack} className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'border'} ${hoverClass} transition flex items-center justify-center`} style={{width:36,height:36,borderRadius:10,...t.headerBtn}}>
+            <button aria-label="Go back" onClick={goBack} className={`${settingBtnClass} ${hoverClass} transition flex items-center justify-center`} style={{width:36,height:36,borderRadius:10,...t.headerBtn}}>
               <ArrowLeft className={`w-5 h-5 ${textMutedClass}`} />
             </button>
           ) : (
@@ -2618,10 +3186,10 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             </div>
           )}
           <div className="flex items-center" style={{gap:6}}>
-            <button aria-label="Toggle dark mode" onClick={toggleDarkMode} className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'border'} ${hoverClass} transition flex items-center justify-center`} style={{width:36,height:36,borderRadius:10,...t.headerBtn}}>
+            <button aria-label="Toggle dark mode" onClick={toggleDarkMode} className={`${settingBtnClass} ${hoverClass} transition flex items-center justify-center`} style={{width:36,height:36,borderRadius:10,...t.headerBtn}}>
               {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" style={{color:'#6B7280'}} />}
             </button>
-            <button aria-label="Settings" onClick={() => { setShowSettings(true); loadCacheStats(); }} className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'border'} ${hoverClass} transition flex items-center justify-center`} style={{width:36,height:36,borderRadius:10,...t.headerBtn}}>
+            <button aria-label="Settings" onClick={() => { setShowSettings(true); loadCacheStats(); }} className={`${settingBtnClass} ${hoverClass} transition flex items-center justify-center`} style={{width:36,height:36,borderRadius:10,...t.headerBtn}}>
               <Settings className={`w-4 h-4`} style={t.textMuted} />
             </button>
           </div>
@@ -2642,12 +3210,103 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
         )}
         {/* Offline banner */}
         {isOffline && (
-          <div role="alert" style={{...frow,gap:8,padding:'10px 14px',marginBottom:12,borderRadius:10,background: darkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2',border:`1px solid ${darkMode ? 'rgba(239,68,68,0.2)' : '#FECACA'}`}}>
+          <div role="alert" style={{...frow,gap:8,padding:'10px 14px',marginBottom:12,borderRadius:10,background: redBg,border:`1px solid ${darkMode ? 'rgba(239,68,68,0.2)' : '#FECACA'}`}}>
             <div style={{width:8,height:8,borderRadius:4,background:'#EF4444',flexShrink:0}} />
-            <span style={{fontSize:13,fontWeight:600,color: darkMode ? '#FCA5A5' : '#B91C1C'}}>You're offline — some features need internet</span>
+            <span style={{fontSize:13,fontWeight:600,color: redLtCol}}>You're offline — some features need internet</span>
           </div>
         )}
         {/* FIX #10: Timer completion notification */}
+        {/* Scan limit modal */}
+        {showScanLimit && (
+          <div style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,0.6)',backdropFilter:'blur(4px)'}}
+            onClick={() => setShowScanLimit(false)}>
+            <div onClick={e => e.stopPropagation()}
+              style={{maxWidth:360,width:'100%',borderRadius:20,padding:'32px 24px',background: rootBg,
+                boxShadow:'0 25px 60px rgba(0,0,0,0.3)',animation:'fadeUp 0.3s ease-out'}}>
+              <div style={{textAlign:'center',marginBottom:20}}>
+                <div style={{fontSize:48,marginBottom:12}}>📸</div>
+                <h3 style={{fontSize:22,fontWeight:800,letterSpacing:'-0.5px',...t.text}}>Daily scan limit reached</h3>
+                <p style={{fontSize:14,marginTop:8,lineHeight:1.5,...t.textMuted}}>
+                  {isPro ? `Pro accounts get ${PRO_SCAN_LIMIT} scans per day.` : `Free accounts get ${FREE_SCAN_LIMIT} photo scans per day.`} Your scans reset at midnight.
+                </p>
+              </div>
+              <div style={{...fcol,gap:8,marginBottom:16}}>
+                <div style={{padding:'12px 16px',borderRadius:12,background: subtleBg,border:`1px solid ${subtleBg2}`,...frow,gap:12}}>
+                  <span style={{fontSize:20}}>🔍</span>
+                  <div style={{flex:1}}>
+                    <p style={{fontSize:13,fontWeight:600,...t.text}}>Search by keyword</p>
+                    <p style={{fontSize:12,...t.textMuted}}>Unlimited — try "quick pasta" or "healthy dinner"</p>
+                  </div>
+                </div>
+                <div style={{padding:'12px 16px',borderRadius:12,background: subtleBg,border:`1px solid ${subtleBg2}`,...frow,gap:12}}>
+                  <span style={{fontSize:20}}>✏️</span>
+                  <div style={{flex:1}}>
+                    <p style={{fontSize:13,fontWeight:600,...t.text}}>Type ingredients manually</p>
+                    <p style={{fontSize:12,...t.textMuted}}>Unlimited — add ingredients by hand on the review screen</p>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setShowScanLimit(false)}
+                style={{width:'100%',padding:'16px',borderRadius:14,fontSize:15,fontWeight:700,border:'none',cursor:'pointer',
+                  background: gradientBtn,color: gradientBtnCol,boxShadow: gradientShadow}}>
+                Got it
+              </button>
+              {!isPro && (
+                <button onClick={() => { setShowScanLimit(false); handleUpgrade(); }}
+                  disabled={upgrading}
+                  style={{width:'100%',padding:'14px',borderRadius:14,fontSize:14,fontWeight:700,border:`2px solid ${t.accent}`,cursor:'pointer',
+                    background:'transparent',color: t.accent,marginTop:8}}>
+                  {upgrading ? 'Redirecting...' : '⚡ Upgrade to Pro — 25 scans/day'}
+                </button>
+              )}
+              <p style={{textAlign:'center',fontSize:12,marginTop:12,...t.textMuted}}>
+                {getScansRemaining() === 0 ? 'Scans reset at midnight' : `${getScansRemaining()} scan${getScansRemaining() !== 1 ? 's' : ''} remaining today`}
+              </p>
+            </div>
+          </div>
+        )}
+        {/* Auth modal */}
+        {showAuthModal && (
+          <div style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,0.6)',backdropFilter:'blur(4px)'}}
+            onClick={() => setShowAuthModal(false)}>
+            <div onClick={e => e.stopPropagation()}
+              style={{maxWidth:380,width:'100%',borderRadius:20,padding:'32px 24px',background: rootBg,boxShadow:'0 25px 60px rgba(0,0,0,0.3)',animation:'fadeUp 0.3s ease-out'}}>
+              <div style={{textAlign:'center',marginBottom:24}}>
+                <SnapChefLogo size={48} />
+                <h3 style={{fontSize:22,fontWeight:800,marginTop:12,...t.text}}>{authMode === 'login' ? 'Welcome back' : 'Create account'}</h3>
+                <p style={{fontSize:13,marginTop:6,...t.textMuted}}>{authMode === 'login' ? 'Sign in to sync your data' : 'Sign up to unlock Pro features'}</p>
+              </div>
+              {authError && (
+                <div style={{padding:'10px 14px',borderRadius:10,marginBottom:16,fontSize:13,fontWeight:600,
+                  background: authError.includes('Check your email') ? (darkMode ? 'rgba(52,211,153,0.1)' : 'rgba(22,163,74,0.05)') : (darkMode ? 'rgba(255,92,114,0.1)' : 'rgba(239,68,68,0.05)'),
+                  color: authError.includes('Check your email') ? successCol : '#EF4444'}}>
+                  {authError}
+                </div>
+              )}
+              <div style={{...fcol,gap:12}}>
+                <input type="email" placeholder="Email" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
+                  style={{width:'100%',padding:'14px 16px',borderRadius:12,fontSize:15,border:`1.5px solid ${borderCol}`,background: subtleBg,color: textCol,outline:'none',boxSizing:'border-box'}} />
+                <input type="password" placeholder="Password" value={authPassword} onChange={e => setAuthPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAuth()}
+                  style={{width:'100%',padding:'14px 16px',borderRadius:12,fontSize:15,border:`1.5px solid ${borderCol}`,background: subtleBg,color: textCol,outline:'none',boxSizing:'border-box'}} />
+                <button onClick={handleAuth} disabled={authSubmitting || !authEmail || !authPassword}
+                  style={{width:'100%',padding:'16px',borderRadius:14,fontSize:15,fontWeight:700,border:'none',cursor: authSubmitting ? 'not-allowed' : 'pointer',
+                    background: gradientBtn,color: gradientBtnCol,boxShadow: gradientShadow,opacity: authSubmitting ? 0.7 : 1}}>
+                  {authSubmitting ? 'Please wait...' : authMode === 'login' ? 'Sign In' : 'Sign Up'}
+                </button>
+              </div>
+              <p style={{textAlign:'center',fontSize:13,marginTop:16,...t.textMuted}}>
+                {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+                <button onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthError(''); }}
+                  style={{background:'none',border:'none',cursor:'pointer',color: t.accent,fontWeight:700,fontSize:13}}>
+                  {authMode === 'login' ? 'Sign Up' : 'Sign In'}
+                </button>
+              </p>
+              <button onClick={() => setShowAuthModal(false)}
+                style={{position:'absolute',top:16,right:16,width:32,height:32,borderRadius:8,...fc,border:'none',cursor:'pointer',background: subtleBg,color: textMutedCol,fontSize:16}}>✕</button>
+            </div>
+          </div>
+        )}
         {timerDone && (
           <div className={`mb-4 ${darkMode ? 'bg-green-900/30 border-green-800 text-green-300' : 'bg-green-100 border-green-300 text-green-800'} border rounded-lg p-4 text-sm font-semibold flex items-center justify-between animate-pulse`}>
             <div className="flex items-center gap-2">
@@ -2681,7 +3340,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <div style={{...frow,gap:8}}>
                   {steps.map((_, i) => (
                     <div key={i} style={{width: i <= onboardingStep ? 32 : 8,height:8,borderRadius:4,
-                      background: i < onboardingStep ? (darkMode ? '#BEFF46' : '#22c55e') : i === onboardingStep ? (darkMode ? '#BEFF46' : '#ef4444') : (darkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB'),
+                      background: i < onboardingStep ? (darkMode ? t.accent : '#22c55e') : i === onboardingStep ? (t.accent) : (borderLight),
                       transition:'all 0.4s ease-out'}} />
                   ))}
                 </div>
@@ -2716,10 +3375,10 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                     {[['beginner', '🔰', 'Beginner', 'Simple recipes, basic techniques'], ['intermediate', '👩‍🍳', 'Intermediate', 'Comfortable with most recipes'], ['advanced', '⭐', 'Advanced', 'Bring on the challenge']].map(([val, icon, label, desc]) => (
                       <button key={val} onClick={() => setUserProfile({...userProfile, skillLevel: val})}
                         className={`text-left transition ${cardClass} border`}
-                        style={{...frow,gap:R.card,padding:'16px 18px',borderRadius:R.card,borderWidth:2,borderColor: userProfile.skillLevel === val ? (darkMode ? '#BEFF46' : '#ef4444') : (darkMode ? 'rgba(255,255,255,0.06)' : '#E5E7EB'),background: userProfile.skillLevel === val ? (darkMode ? 'rgba(190,255,70,0.06)' : 'rgba(239,68,68,0.04)') : undefined}}>
+                        style={{...frow,gap:R.card,padding:'16px 18px',borderRadius:R.card,borderWidth:2,borderColor: userProfile.skillLevel === val ? (t.accent) : (borderCol),background: userProfile.skillLevel === val ? (accentBgSoft) : undefined}}>
                         <span style={{fontSize:28}}>{icon}</span>
                         <div>
-                          <span className="font-bold" style={{fontSize:15,color: userProfile.skillLevel === val ? t.accent : (darkMode ? '#F9FAFB' : '#111827')}}>{label}</span>
+                          <span className="font-bold" style={{fontSize:15,color: userProfile.skillLevel === val ? t.accent : (textCol)}}>{label}</span>
                           <p style={{fontSize:13,marginTop:1,...t.textMuted}}>{desc}</p>
                         </div>
                       </button>
@@ -2746,7 +3405,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               </div>
               <div className="flex gap-3">
                 {onboardingStep > 0 && (
-                  <button onClick={() => setOnboardingStep(onboardingStep - 1)} className={`flex-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'} ${textClass} rounded-2xl py-4 font-semibold`}>Back</button>
+                  <button onClick={() => setOnboardingStep(onboardingStep - 1)} className={`flex-1 ${bgSubtle2Class} ${textClass} rounded-2xl py-4 font-semibold`}>Back</button>
                 )}
                 <button onClick={() => {
                   if (onboardingStep < steps.length - 1) setOnboardingStep(onboardingStep + 1);
@@ -2794,7 +3453,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             {/* Alert — vertical bar accent */}
             {expiringItems.length > 0 && (
               <div className={`fade-up-d1 ${darkMode ? 'bg-red-950/40 border-red-900/50' : 'bg-red-50 border-red-100'} border`} style={{...frow,gap:S.gap,padding:'14px 16px',borderRadius:R.card}}>
-                <div style={{width:3,height:32,borderRadius:2,background: darkMode ? '#FF5C72' : '#ef4444',flexShrink:0}} />
+                <div style={{width:3,height:32,borderRadius:2,background: pinkCol,flexShrink:0}} />
                 <div>
                   <p className={`font-bold text-sm ${darkMode ? 'text-red-200' : 'text-red-800'}`}>{expiringItems.length} items expiring</p>
                   <p className={`text-xs ${darkMode ? 'text-red-300' : 'text-red-700'}`} style={{marginTop:1}}>{expiringItems.map(item => item.name).join(', ')}</p>
@@ -2830,13 +3489,13 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             {/* Action Grid — Primary tools */}
             <div className="fade-up-d2" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:S.gap}}>
               {[
-                { action: () => nav('pantry'), icon: <Package className="w-6 h-6" />, label: 'Pantry', color: darkMode ? '#34D399' : '#16a34a', bg: darkMode ? 'rgba(52,211,153,0.15)' : 'rgba(22,163,74,0.07)', glow: darkMode ? '0 4px 20px rgba(52,211,153,0.12)' : '0 4px 16px rgba(22,163,74,0.08)', badge: pantryItems.length || null },
-                { action: () => nav('mealPlan'), icon: <Calendar className="w-6 h-6" />, label: 'Meal Plan', color: darkMode ? '#B07CFF' : '#7c3aed', bg: darkMode ? 'rgba(176,124,255,0.15)' : 'rgba(124,58,237,0.07)', glow: darkMode ? '0 4px 20px rgba(176,124,255,0.12)' : '0 4px 16px rgba(124,58,237,0.08)' },
-                { action: () => setShowShoppingList(true), icon: <ShoppingCart className="w-6 h-6" />, label: 'Shopping', color: darkMode ? '#5CA4FF' : '#2563eb', bg: darkMode ? 'rgba(92,164,255,0.15)' : 'rgba(37,99,235,0.07)', glow: darkMode ? '0 4px 20px rgba(92,164,255,0.12)' : '0 4px 16px rgba(37,99,235,0.08)', badge: shoppingList.filter(i=>!i.checked).length || null },
+                { action: () => nav('pantry'), icon: <Package className="w-6 h-6" />, label: 'Pantry', color: successCol, bg: greenBg3, glow: darkMode ? '0 4px 20px rgba(52,211,153,0.12)' : '0 4px 16px rgba(22,163,74,0.08)', badge: pantryItems.length || null },
+                { action: () => nav('mealPlan'), icon: <Calendar className="w-6 h-6" />, label: 'Meal Plan', color: purpleCol, bg: darkMode ? 'rgba(176,124,255,0.15)' : 'rgba(124,58,237,0.07)', glow: darkMode ? '0 4px 20px rgba(176,124,255,0.12)' : '0 4px 16px rgba(124,58,237,0.08)' },
+                { action: () => setShowShoppingList(true), icon: <ShoppingCart className="w-6 h-6" />, label: 'Shopping', color: blueCol, bg: darkMode ? 'rgba(92,164,255,0.15)' : 'rgba(37,99,235,0.07)', glow: darkMode ? '0 4px 20px rgba(92,164,255,0.12)' : '0 4px 16px rgba(37,99,235,0.08)', badge: shoppingList.filter(i=>!i.checked).length || null },
               ].map((item, i) => (
                 <button key={i} onClick={item.action} className={`card-hover ${cardClass} border`}
                   style={{borderRadius:R.card,padding:'18px 12px',...fcol,alignItems:'center',gap:S.tight,cursor:'pointer',textAlign:'center',...t.card,
-                    boxShadow: darkMode ? '0 2px 12px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.04)'}}>
+                    boxShadow: shadowSm}}>
                   <div style={{width:48,height:48,borderRadius:R.inner,background:item.bg,color:item.color,...fc,flexShrink:0,boxShadow:item.glow}}>
                     {item.icon}
                   </div>
@@ -2848,7 +3507,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             {/* Action Grid — Secondary tools */}
             <div className="fade-up-d2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:S.tight,marginTop:-S.gap}}>
               {[
-                { action: () => setShowStats(true), icon: <Award className="w-4 h-4" />, label: 'CookStats', color: darkMode ? '#FBBF24' : '#D97706' },
+                { action: () => setShowStats(true), icon: <Award className="w-4 h-4" />, label: 'CookStats', color: yellowBrCol },
                 { action: () => setShowScanHistory(true), icon: <History className="w-4 h-4" />, label: 'ScanLog', color: darkMode ? '#A78BFA' : '#7C3AED' },
               ].map((item, i) => (
                 <button key={i} onClick={item.action}
@@ -2866,9 +3525,9 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <div style={{...frow,gap:12}}>
                   <button onClick={() => setShowNutritionEdit(!showNutritionEdit)}
                     style={{fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:20,cursor:'pointer',transition:'all 0.2s',
-                      background: showNutritionEdit ? (darkMode ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.08)') : (darkMode ? 'rgba(255,255,255,0.06)' : '#F3F4F6'),
-                      color: showNutritionEdit ? '#ef4444' : (darkMode ? '#D1D5DB' : '#374151'),
-                      border: `1px solid ${showNutritionEdit ? (darkMode ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)') : (darkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB')}`}}>
+                      background: showNutritionEdit ? (darkMode ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.08)') : (borderCol),
+                      color: showNutritionEdit ? '#ef4444' : (headCol),
+                      border: `1px solid ${showNutritionEdit ? (darkMode ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)') : (borderLight)}`}}>
                     {showNutritionEdit ? '✕ Done' : '⚙ Set limits'}
                   </button>
                   <button onClick={() => setShowTracker(true)} style={{fontSize:11,color: t.accent,fontWeight:600,background:'none',border:'none',cursor:'pointer'}}>View all →</button>
@@ -2878,10 +3537,10 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <div className={`${cardClass} border`} style={{borderRadius:R.card,padding:16,marginBottom:10,...t.card,animation:'fadeUp 0.2s ease-out both'}}>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8}}>
                     {[
-                      { field: 'calorieTarget', label: 'Calories', unit: 'kcal', color: darkMode ? '#BEFF46' : '#ef4444' },
+                      { field: 'calorieTarget', label: 'Calories', unit: 'kcal', color: t.accent },
                       { field: 'proteinTarget', label: 'Protein', unit: 'g', color: darkMode ? '#FF8C42' : '#ef4444' },
                       { field: 'carbTarget', label: 'Carbs', unit: 'g', color: darkMode ? '#BEFF46' : '#16a34a' },
-                      { field: 'fatTarget', label: 'Fat', unit: 'g', color: darkMode ? '#B07CFF' : '#7c3aed' },
+                      { field: 'fatTarget', label: 'Fat', unit: 'g', color: purpleCol },
                     ].map(m => (
                       <div key={m.field} style={{textAlign:'center'}}>
                         <label style={{fontSize:11,fontWeight:600,...t.textMuted,display:'block',marginBottom:4}}>{m.label}</label>
@@ -2893,16 +3552,16 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   </div>
                 </div>
               )}
-              <div className={`${cardClass} border`} style={{borderRadius:R.card,overflow:'hidden',...t.card,boxShadow: darkMode ? '0 4px 24px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,0,0,0.05)'}}>
+              <div className={`${cardClass} border`} style={{borderRadius:R.card,overflow:'hidden',...t.card,boxShadow: shadowLg}}>
                 {/* Calorie ring — centered hero */}
                 <div style={{padding:'28px 20px 18px',textAlign:'center'}}>
                   {(() => {
-                    const ringColor = homeCalPct > 1 ? '#ef4444' : homeCalPct > 0.85 ? '#f59e0b' : (darkMode ? '#BEFF46' : '#22c55e');
+                    const ringColor = homeCalPct > 1 ? '#ef4444' : homeCalPct > 0.85 ? '#f59e0b' : (darkMode ? t.accent : '#22c55e');
                     const r = 44, circ = 2 * Math.PI * r;
                     return (
                       <div style={{position:'relative',display:'inline-block'}}>
                         <svg width="108" height="108" viewBox="0 0 108 108">
-                          <circle cx="54" cy="54" r={r} fill="none" stroke={darkMode ? 'rgba(255,255,255,0.05)' : '#F3F4F6'} strokeWidth="8" />
+                          <circle cx="54" cy="54" r={r} fill="none" stroke={subtleBg2} strokeWidth="8" />
                           <circle cx="54" cy="54" r={r} fill="none" stroke={ringColor} strokeWidth="8"
                             strokeDasharray={`${Math.min(circ, homeCalPct * circ)} ${circ}`} strokeLinecap="round" transform="rotate(-90 54 54)"
                             style={{transition:'stroke-dasharray 0.6s ease-out', filter: homeCalPct > 0 ? `drop-shadow(0 0 6px ${ringColor}40)` : 'none'}} />
@@ -2919,7 +3578,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <div style={{padding:'0 20px 16px',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
                   {[
                     { label: 'Protein', val: homeTotals.protein, target: userProfile.proteinTarget || 150, color: darkMode ? '#FF8C42' : '#F97316' },
-                    { label: 'Carbs', val: homeTotals.carbs, target: userProfile.carbTarget || 200, color: darkMode ? '#34D399' : '#16a34a' },
+                    { label: 'Carbs', val: homeTotals.carbs, target: userProfile.carbTarget || 200, color: successCol },
                     { label: 'Fat', val: homeTotals.fat, target: userProfile.fatTarget || 65, color: darkMode ? '#B07CFF' : '#8B5CF6' },
                   ].map(m => {
                     const pct = m.target > 0 ? Math.min(1, m.val / m.target) : 0;
@@ -2928,17 +3587,17 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                     return (
                       <div key={m.label} style={{textAlign:'center'}}>
                         <span style={{fontSize:13,fontWeight:600,...t.textMuted,display:'block',marginBottom:6}}>{m.label}</span>
-                        <div style={{height:6,borderRadius:3,background: darkMode ? 'rgba(255,255,255,0.06)' : '#F3F4F6',overflow:'hidden',marginBottom:6}}>
+                        <div style={{height:6,borderRadius:3,background: borderCol,overflow:'hidden',marginBottom:6}}>
                           <div style={{height:'100%',borderRadius:3,width:`${pct * 100}%`,background:barColor,transition:'width 0.5s ease-out',boxShadow: pct > 0 ? `0 0 8px ${barColor}40` : 'none'}} />
                         </div>
-                        <span style={{fontSize:15,fontFamily:'JetBrains Mono, monospace',fontWeight:700,color: over ? '#ef4444' : (darkMode ? '#F9FAFB' : '#111827')}}>{m.val}</span>
+                        <span style={{fontSize:15,fontFamily:'JetBrains Mono, monospace',fontWeight:700,color: over ? '#ef4444' : (textCol)}}>{m.val}</span>
                         <span style={{fontSize:13,...t.textMuted,fontWeight:400}}>/{m.target}g</span>
                       </div>
                     );
                   })}
                 </div>
                 {/* Status footer */}
-                <div style={{padding:'12px 20px',borderTop:`1px solid ${darkMode ? 'rgba(255,255,255,0.05)' : '#F3F4F6'}`,background: darkMode ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)'}}>
+                <div style={{padding:'12px 20px',borderTop:`1px solid ${subtleBg2}`,background: darkMode ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)'}}>
                   {homeTotals.calories === 0 ? (
                     <p style={{fontSize:13,textAlign:'center',...t.textMuted}}>Log a meal to start tracking</p>
                   ) : (
@@ -2949,7 +3608,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                         { label: 'carbs', val: (userProfile.carbTarget || 200) - homeTotals.carbs, unit: 'g' },
                         { label: 'fat', val: (userProfile.fatTarget || 65) - homeTotals.fat, unit: 'g' },
                       ].map((i, idx) => {
-                        const c = i.val <= 0 ? '#ef4444' : i.val < (idx === 0 ? 300 : 20) ? '#f59e0b' : (darkMode ? '#34D399' : '#16a34a');
+                        const c = i.val <= 0 ? '#ef4444' : i.val < (idx === 0 ? 300 : 20) ? '#f59e0b' : (successCol);
                         return (
                           <span key={i.label} style={{fontSize:11,fontWeight:600,color:c,textAlign:'center',lineHeight:1.4}}>
                             {i.val <= 0 ? `+${Math.abs(i.val)}${i.unit}` : `${i.val}${i.unit}`}<br/>
@@ -2977,7 +3636,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                             <Camera className={`w-5 h-5 ${textMutedClass}`} />
                           </div>
                         )}
-                        <div style={{position:'absolute',bottom:4,left:4,background:'rgba(0,0,0,0.65)',backdropFilter:'blur(4px)',color: darkMode ? '#BEFF46' : '#ef4444',fontFamily:'JetBrains Mono, monospace',fontSize:11,padding:'2px 7px',borderRadius:4,fontWeight:600}}>{scan.ingredients.length} items</div>
+                        <div style={{position:'absolute',bottom:4,left:4,background:'rgba(0,0,0,0.65)',backdropFilter:'blur(4px)',color: t.accent,fontFamily:'JetBrains Mono, monospace',fontSize:11,padding:'2px 7px',borderRadius:4,fontWeight:600}}>{scan.ingredients.length} items</div>
                       </div>
                       <div className="mt-1.5 text-left">
                         <p className={`font-bold ${textClass}`} style={{fontSize:11}}>{scan.ingredients.slice(0, 2).join(', ')}</p>
@@ -2991,14 +3650,14 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             {/* Expiring Soon Alert */}
             {expiringItems.length > 0 && (
               <div className="fade-up-d3" style={{padding:'14px 16px',borderRadius:R.card,border:`1px solid ${darkMode ? 'rgba(250,204,21,0.2)' : 'rgba(234,179,8,0.3)'}`,background: darkMode ? 'rgba(250,204,21,0.05)' : 'rgba(254,249,195,0.5)'}}>
-                <p style={{fontSize:13,fontWeight:700,marginBottom:6,color: darkMode ? '#FACC15' : '#A16207'}}>⏰ Expiring soon</p>
+                <p style={{fontSize:13,fontWeight:700,marginBottom:6,color: yellowCol}}>⏰ Expiring soon</p>
                 <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                   {expiringItems.slice(0, 5).map((item, i) => {
                     const days = getDaysUntilExpiry(item.expiry);
                     return (
                       <span key={i} style={{fontSize:11,fontWeight:600,padding:'4px 10px',borderRadius:8,
-                        background: days <= 1 ? (darkMode ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)') : (darkMode ? 'rgba(250,204,21,0.1)' : 'rgba(234,179,8,0.08)'),
-                        color: days <= 1 ? '#EF4444' : (darkMode ? '#FACC15' : '#A16207')}}>
+                        background: days <= 1 ? (redBg2) : (yellowBg),
+                        color: days <= 1 ? '#EF4444' : (yellowCol)}}>
                         {item.name} · {days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `${days}d`}
                       </span>
                     );
@@ -3085,8 +3744,47 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 </button>
               </div>
             )}
+            {/* Ingredient Match Slider */}
+            {images.length > 0 && (
+              <div className={`${cardClass} border`} style={{borderRadius:16,padding:'16px 20px'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+                  <span className={`font-semibold ${textClass}`} style={{fontSize:14}}>Ingredient Match</span>
+                  <span className="font-bold" style={{fontSize:14,color: ingredientMatch >= 100 ? '#22c55e' : ingredientMatch >= 75 ? '#f97316' : '#eab308'}}>{ingredientMatch}%</span>
+                </div>
+                <input type="range" min={25} max={100} step={25} value={ingredientMatch}
+                  onChange={(e) => setIngredientMatch(Number(e.target.value))}
+                  style={{width:'100%',accentColor:'#f97316',height:6,cursor:'pointer'}} />
+                <div style={{display:'flex',justifyContent:'space-between',marginTop:6}}>
+                  <span className={textMutedClass} style={{fontSize:11}}>Flexible</span>
+                  <span className={textMutedClass} style={{fontSize:11}}>Strict</span>
+                </div>
+                <p className={textMutedClass} style={{fontSize:12,marginTop:8}}>
+                  {ingredientMatch >= 100 ? '🔒 Only what you have — no extras needed'
+                    : ingredientMatch >= 75 ? '🛒 Mostly yours — may need a few extras'
+                    : ingredientMatch >= 50 ? '💡 Flexible — inspired by what you have'
+                    : '🌟 Wide open — your items as a starting point'}
+                </p>
+                {pantryItems.length > 0 ? (
+                  <button onClick={() => setIncludePantryInMatch(!includePantryInMatch)}
+                    style={{display:'flex',alignItems:'center',gap:8,marginTop:12,paddingTop:12,borderTop:`1px solid ${darkMode ? '#333' : '#e5e7eb'}`,width:'100%',background:'none',border:'none',borderTopStyle:'solid',borderTopWidth:1,borderTopColor: darkMode ? '#333' : '#e5e7eb',cursor:'pointer'}}>
+                    <div style={{width:36,height:20,borderRadius:10,background: includePantryInMatch ? '#f97316' : (darkMode ? '#333' : '#D1D5DB'),transition:'background 0.2s',position:'relative',flexShrink:0}}>
+                      <div style={{width:16,height:16,borderRadius:8,background:'#fff',position:'absolute',top:2,left: includePantryInMatch ? 18 : 2,transition:'left 0.2s',boxShadow:'0 1px 3px rgba(0,0,0,0.2)'}} />
+                    </div>
+                    <span className={textClass} style={{fontSize:13,fontWeight:500}}>Include pantry items ({pantryItems.length})</span>
+                  </button>
+                ) : (
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:12,paddingTop:12,borderTop:`1px solid ${darkMode ? '#333' : '#e5e7eb'}`,width:'100%',opacity:0.4}}>
+                    <div style={{width:36,height:20,borderRadius:10,background: darkMode ? '#333' : '#D1D5DB',position:'relative',flexShrink:0}}>
+                      <div style={{width:16,height:16,borderRadius:8,background:'#fff',position:'absolute',top:2,left:2,boxShadow:'0 1px 3px rgba(0,0,0,0.2)'}} />
+                    </div>
+                    <span className={textMutedClass} style={{fontSize:13,fontWeight:500}}>Include pantry items (empty)</span>
+                  </div>
+                )}
+              </div>
+            )}
             {/* Find Recipes button */}
             {images.length > 0 && (
+              <>
               <button
                 onClick={analyzeAllImages}
                 className="card-hover w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl p-5 font-bold text-lg shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
@@ -3094,12 +3792,16 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <SnapChefIcon className="w-6 h-6" />
                 Find Recipes ({images.length} photo{images.length !== 1 ? 's' : ''})
               </button>
+              <p style={{textAlign:'center',fontSize:12,...t.textMuted}}>
+                📸 {getScansRemaining()} of {getScanLimit()} scan{getScanLimit() !== 1 ? 's' : ''} remaining today{isPro ? '' : ' (free)'}
+              </p>
+              </>
             )}
             <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleImageCapture} className="hidden" />
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageCapture} className="hidden" />
             <div className={`${darkMode ? 'bg-amber-900/20 border-amber-800' : 'bg-amber-50 border-amber-200'} border rounded-lg p-4 space-y-2`}>
-              <p className={`font-semibold text-sm ${darkMode ? 'text-amber-200' : 'text-amber-900'}`}>Tips for best results:</p>
-              <ul className={`text-sm space-y-1 ml-4 list-disc ${darkMode ? 'text-amber-300' : 'text-amber-800'}`}>
+              <p className={`font-semibold text-sm ${amberText2Class}`}>Tips for best results:</p>
+              <ul className={`text-sm space-y-1 ml-4 list-disc ${amberTextClass}`}>
                 <li>Add multiple photos for the most complete results</li>
                 <li>Works with fridges, counters, shopping carts, pantries</li>
                 <li>Good lighting helps identify ingredients</li>
@@ -3163,61 +3865,159 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
 
         {/* ==================== PANTRY ==================== */}
         {step === 'pantry' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className={`text-2xl font-bold ${textClass}`}>My Pantry</h2>
-              <button onClick={() => setShowAddPantry(true)} className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition">
-                <Plus className="w-4 h-4" /> Add Item
-              </button>
-            </div>
-            {showAddPantry && (
-              <div className={`${cardClass} border rounded-lg p-4 space-y-3`}>
-                <input type="text" aria-label="Pantry item name" placeholder="Item name" value={newPantryItem.name} onChange={(e) => setNewPantryItem({ ...newPantryItem, name: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') addPantryItem(); }} className={`w-full px-3 py-2 rounded border ${inputClass}`} />
-                <div className="grid grid-cols-2 gap-3">
-                  <input type="text" placeholder="Quantity" value={newPantryItem.quantity} onChange={(e) => setNewPantryItem({ ...newPantryItem, quantity: e.target.value })} className={`px-3 py-2 rounded border ${inputClass}`} />
-                  <input type="date" value={newPantryItem.expiry} onChange={(e) => setNewPantryItem({ ...newPantryItem, expiry: e.target.value })} className={`px-3 py-2 rounded border ${inputClass}`} />
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={addPantryItem} className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600 transition">Add</button>
-                  <button onClick={() => setShowAddPantry(false)} className={`flex-1 ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} py-2 rounded transition`}>Cancel</button>
-                </div>
+          <div style={{...fcol,gap:20}} className="screen-enter">
+            {/* Header */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div>
+                <h2 className={`font-extrabold ${textClass}`} style={{fontSize:24,letterSpacing:'-0.5px'}}>My Pantry</h2>
+                {pantryItems.length > 0 && <p className={textMutedClass} style={{fontSize:13,marginTop:2}}>{pantryItems.length} item{pantryItems.length !== 1 ? 's' : ''}</p>}
               </div>
-            )}
-            <div className="space-y-2">
-              {pantryItems.map(item => {
-                const days = getDaysUntilExpiry(item.expiry);
-                const isExpired = days !== null && days < 0;
-                const isExpiring = days !== null && days >= 0 && days <= 3;
-                return (
-                  <div key={item.id} className={`${cardClass} border rounded-lg p-4 flex items-center justify-between`}
-                    style={{borderColor: isExpired ? '#EF4444' : isExpiring ? (darkMode ? '#B45309' : '#F59E0B') : undefined}}>
-                    <div className="flex-1">
-                      <div style={{...frow,gap:8}}>
-                        <h4 className={`font-semibold ${textClass}`}>{item.name}</h4>
-                        {isExpired && <span style={{fontSize:11,fontWeight:700,padding:'2px 6px',borderRadius:4,background:'rgba(239,68,68,0.1)',color:'#EF4444'}}>EXPIRED</span>}
-                        {isExpiring && !isExpired && <span style={{fontSize:11,fontWeight:700,padding:'2px 6px',borderRadius:4,background: darkMode ? 'rgba(250,204,21,0.1)' : 'rgba(234,179,8,0.08)',color: darkMode ? '#FACC15' : '#A16207'}}>{days === 0 ? 'TODAY' : days === 1 ? '1 DAY' : `${days} DAYS`}</span>}
-                      </div>
-                      <div className={`text-sm ${textMutedClass} flex items-center gap-3`} style={{marginTop:2}}>
-                        {item.quantity && <span>{item.quantity}</span>}
-                        {item.expiry && !isExpired && !isExpiring && <span>Exp: {new Date(item.expiry).toLocaleDateString()}</span>}
-                      </div>
-                    </div>
-                    <button onClick={() => removePantryItem(item.id)} className={`p-2 ${darkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-100'} rounded transition`}>
-                      <X className="w-4 h-4 text-red-600" />
-                    </button>
-                  </div>
-                );
-              })}
-              {pantryItems.length === 0 && (
-                <div className="text-center" style={{padding:'40px 20px'}}>
-                  <div style={{width:80,height:80,borderRadius:20,background: darkMode ? 'rgba(52,211,153,0.08)' : 'rgba(22,163,74,0.06)',...fc,margin:'0 auto 16px'}}>
-                    <Package style={{width:36,height:36,color: darkMode ? '#34D399' : '#16a34a',opacity:0.6}} />
-                  </div>
-                  <p className="font-bold" style={{fontSize:16,...t.text}}>Your pantry is empty</p>
-                  <p style={{fontSize:13,marginTop:6,maxWidth:240,margin:'6px auto 0',...t.textMuted}}>Add ingredients you have at home so we can find recipes that match</p>
-                </div>
+              {pantryItems.length > 0 && (
+                <button onClick={() => tapConfirm('clear-pantry', () => { setPantryItems([]); saveToStorage('pantry-items', []); })}
+                  style={{fontSize:12,fontWeight:600,color:'#ef4444',background:'none',border:'none',cursor:'pointer'}}>
+                  {confirmId === 'clear-pantry' ? 'Tap to confirm' : 'Clear all'}
+                </button>
               )}
             </div>
+            {/* Quick add + scan bar */}
+            <div style={{...fcol,gap:8}}>
+              <div style={{display:'flex',gap:8}}>
+                <div style={{flex:1,position:'relative'}}>
+                  <input
+                    type="text" placeholder="Add item..."
+                    value={newPantryItem.name}
+                    onChange={(e) => setNewPantryItem({ ...newPantryItem, name: e.target.value })}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && newPantryItem.name.trim()) addPantryItem(); }}
+                    className={`w-full border ${inputClass}`}
+                    style={{padding:'14px 16px',borderRadius:12,fontSize:15}}
+                  />
+                </div>
+                <button onClick={() => { if (newPantryItem.name.trim()) addPantryItem(); }}
+                  disabled={!newPantryItem.name.trim()}
+                  style={{width:48,height:48,borderRadius:12,...fc,background: newPantryItem.name.trim() ? gradientBtn : mutedBg,cursor: newPantryItem.name.trim() ? 'pointer' : 'not-allowed',border:'none',flexShrink:0}}>
+                  <Plus style={{width:20,height:20,color: newPantryItem.name.trim() ? gradientBtnCol : (mutedCol)}} />
+                </button>
+              </div>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={() => pantryCameraRef.current?.click()} disabled={scanningPantry}
+                  className="card-hover"
+                  style={{flex:1,padding:'12px',borderRadius:12,fontSize:13,fontWeight:700,border:'none',cursor: scanningPantry ? 'not-allowed' : 'pointer',
+                    background: accentBg,color: t.accent,...fc,gap:6,opacity: scanningPantry ? 0.6 : 1}}>
+                  {scanningPantry ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                  {scanningPantry ? 'Scanning...' : 'Take Photo'}
+                </button>
+                <button onClick={() => pantryFileRef.current?.click()} disabled={scanningPantry}
+                  className="card-hover"
+                  style={{flex:1,padding:'12px',borderRadius:12,fontSize:13,fontWeight:700,border:`1px solid ${borderCol}`,background: cardBg,cursor:'pointer',...fc,gap:6,...t.text}}>
+                  <Upload className="w-4 h-4" /> Upload Photo
+                </button>
+              </div>
+            </div>
+            <input ref={pantryCameraRef} type="file" accept="image/*" capture="environment" onChange={handlePantryScan} className="hidden" />
+            <input ref={pantryFileRef} type="file" accept="image/*" onChange={handlePantryScan} className="hidden" />
+            {/* Scan review */}
+            {pantryScanReview && (
+              <div className={`${cardClass} border`} style={{borderRadius:R.card,padding:'18px 20px',...t.card}}>
+                <div style={{...frow,justifyContent:'space-between',marginBottom:12}}>
+                  <span style={{fontSize:15,fontWeight:700,...t.text}}>Found {pantryScanReview.length} item{pantryScanReview.length !== 1 ? 's' : ''}</span>
+                  <button onClick={() => setPantryScanReview(null)}
+                    style={{fontSize:12,fontWeight:600,color: mutedCol,background:'none',border:'none',cursor:'pointer'}}>Cancel</button>
+                </div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:16}}>
+                  {pantryScanReview.map((name, i) => (
+                    <div key={i} style={{...frow,gap:6,padding:'8px 10px 8px 14px',borderRadius:20,fontSize:14,fontWeight:500,
+                      background: successBg,color: greenBrCol,border:`1px solid ${darkMode ? 'rgba(52,211,153,0.15)' : 'rgba(22,163,74,0.12)'}`}}>
+                      <span>{name}</span>
+                      <button onClick={() => {
+                        const updated = pantryScanReview.filter((_, j) => j !== i);
+                        if (updated.length === 0) setPantryScanReview(null);
+                        else setPantryScanReview(updated);
+                      }}
+                        style={{width:20,height:20,borderRadius:10,...fc,background:'rgba(239,68,68,0.1)',cursor:'pointer',border:'none'}}>
+                        <X style={{width:11,height:11,color:'#ef4444'}} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => {
+                  const newPantry = [...pantryItems];
+                  const existing = pantryItems.map(p => p.name.toLowerCase().trim());
+                  let added = 0;
+                  pantryScanReview.forEach(n => {
+                    if (!existing.includes(n.toLowerCase())) {
+                      newPantry.push({ id: Date.now() + Math.random(), name: n, category: 'Other' });
+                      existing.push(n.toLowerCase());
+                      added++;
+                    }
+                  });
+                  setPantryItems(newPantry);
+                  saveToStorage('pantry-items', newPantry);
+                  setPantryScanReview(null);
+                  showToast(`${added} item${added !== 1 ? 's' : ''} added to pantry`);
+                }}
+                  style={{width:'100%',padding:'12px',borderRadius:12,fontSize:14,fontWeight:700,border:'none',cursor:'pointer',
+                    background: gradientBtn,color: gradientBtnCol,...fc,gap:6}}>
+                  Add {pantryScanReview.length} item{pantryScanReview.length !== 1 ? 's' : ''} to pantry
+                </button>
+              </div>
+            )}
+            {/* Items grouped by category */}
+            {pantryItems.length > 0 ? (() => {
+              const groups = {};
+              pantryItems.forEach(item => {
+                const cat = categorizeShoppingItem(item.name);
+                if (!groups[cat]) groups[cat] = [];
+                groups[cat].push(item);
+              });
+              const order = Object.keys(GROCERY_CATEGORIES);
+              const sorted = Object.entries(groups).sort(([a], [b]) => {
+                if (a === '📦 Other') return 1;
+                if (b === '📦 Other') return -1;
+                return order.indexOf(a) - order.indexOf(b);
+              });
+              return (
+                <div style={{...fcol,gap:16}}>
+                  {sorted.map(([category, items]) => (
+                    <div key={category}>
+                      <div style={{...frow,justifyContent:'space-between',marginBottom:8}}>
+                        <span style={{fontSize:13,fontWeight:700,color: mutedCol}}>{category}</span>
+                        <span style={{fontSize:11,fontWeight:600,...t.textMuted}}>{items.length}</span>
+                      </div>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                        {items.map(item => {
+                          const days = getDaysUntilExpiry(item.expiry);
+                          const isExpired = days !== null && days < 0;
+                          const isExpiring = days !== null && days >= 0 && days <= 3;
+                          return (
+                            <div key={item.id}
+                              style={{...frow,gap:6,padding:'8px 10px 8px 14px',borderRadius:20,fontSize:14,fontWeight:500,
+                                background: isExpired ? (darkMode ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.06)') : isExpiring ? (darkMode ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.06)') : subtleBg,
+                                color: isExpired ? '#ef4444' : isExpiring ? warnCol : textCol,
+                                border: `1px solid ${isExpired ? 'rgba(239,68,68,0.2)' : isExpiring ? 'rgba(245,158,11,0.2)' : borderCol}`}}>
+                              <span>{item.name}</span>
+                              {isExpired && <span style={{fontSize:10,fontWeight:700}}>EXPIRED</span>}
+                              {isExpiring && !isExpired && <span style={{fontSize:10,fontWeight:700}}>{days === 0 ? 'TODAY' : `${days}d`}</span>}
+                              <button onClick={() => removePantryItem(item.id)}
+                                style={{width:20,height:20,borderRadius:10,...fc,background: isExpired ? 'rgba(239,68,68,0.15)' : (darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),cursor:'pointer',border:'none'}}>
+                                <X style={{width:11,height:11,color: isExpired ? '#ef4444' : mutedCol}} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })() : !scanningPantry && (
+              <div className="text-center" style={{padding:'32px 20px'}}>
+                <div style={{width:72,height:72,borderRadius:18,background: greenBg,...fc,margin:'0 auto 16px'}}>
+                  <Package style={{width:32,height:32,color: successCol,opacity:0.6}} />
+                </div>
+                <p className="font-bold" style={{fontSize:16,...t.text}}>Your pantry is empty</p>
+                <p style={{fontSize:13,marginTop:6,maxWidth:260,margin:'6px auto 0',...t.textMuted}}>Add items manually or scan your fridge to get started</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -3227,7 +4027,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
               <h2 className={`text-2xl font-bold ${textClass}`}>Meal Planner</h2>
               <button onClick={autoFillMealPlan} disabled={fillingMealPlan} style={{padding:'8px 14px',borderRadius:10,fontSize:13,fontWeight:700,border:'none',cursor: fillingMealPlan ? 'not-allowed' : 'pointer',
-                background: darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.06)',color: t.accent,opacity: fillingMealPlan ? 0.6 : 1,display:'flex',alignItems:'center',gap:6}}>
+                background: accentBg,color: t.accent,opacity: fillingMealPlan ? 0.6 : 1,display:'flex',alignItems:'center',gap:6}}>
                 {fillingMealPlan ? <><Loader2 className="w-4 h-4 animate-spin" /> Planning...</> : '✨ Auto-fill week'}
               </button>
             </div>
@@ -3243,18 +4043,48 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 return (
                   <button key={key} onClick={() => setSelectedDate(key)}
                     style={{minWidth:56,padding:'10px 6px',borderRadius:12,textAlign:'center',cursor:'pointer',flexShrink:0,border: isSelected ? `2px solid ${t.accent}` : `1px solid ${borderCol}`,
-                      background: isSelected ? (darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.04)') : cardBg,transition:'all 0.2s'}}>
-                    <p style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px',color: isToday ? t.accent : (darkMode ? '#9CA3AF' : '#6B7280')}}>{isToday ? 'Today' : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]}</p>
-                    <p style={{fontSize:18,fontWeight:800,marginTop:2,color: isSelected ? t.accent : (darkMode ? '#F9FAFB' : '#111827')}}>{d.getDate()}</p>
+                      background: isSelected ? (accentBg) : cardBg,transition:'all 0.2s'}}>
+                    <p style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px',color: isToday ? t.accent : (textMutedCol)}}>{isToday ? 'Today' : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]}</p>
+                    <p style={{fontSize:18,fontWeight:800,marginTop:2,color: isSelected ? t.accent : (textCol)}}>{d.getDate()}</p>
                     <div style={{display:'flex',gap:3,justifyContent:'center',marginTop:4}}>
                       {mealSlots.map((_, j) => (
-                        <div key={j} style={{width:6,height:6,borderRadius:3,background: j < filledCount ? t.accent : (darkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB')}} />
+                        <div key={j} style={{width:6,height:6,borderRadius:3,background: j < filledCount ? t.accent : (borderLight)}} />
                       ))}
                     </div>
                   </button>
                 );
               })}
             </div>
+            {/* Weekly cost estimate */}
+            {(() => {
+              let totalCost = 0;
+              let mealsWithCost = 0;
+              let totalMeals = 0;
+              Array.from({ length: 7 }, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() + i);
+                const key = d.toISOString().split('T')[0];
+                const dayMeals = mealPlan[key] || {};
+                Object.values(dayMeals).forEach(meal => {
+                  if (meal) {
+                    totalMeals++;
+                    if (meal.estimatedCost) {
+                      totalCost += parseFloat(meal.estimatedCost) * (meal.servings || 1);
+                      mealsWithCost++;
+                    }
+                  }
+                });
+              });
+              if (mealsWithCost === 0) return null;
+              return (
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderRadius:R.card,background: subtleBg,border:`1px solid ${subtleBg2}`}}>
+                  <span style={{fontSize:13,...t.textMuted}}>Est. weekly grocery cost</span>
+                  <div style={{textAlign:'right'}}>
+                    <span style={{fontSize:16,fontWeight:700,color: greenBrCol}}>~${totalCost.toFixed(2)}</span>
+                    {mealsWithCost < totalMeals && <p style={{fontSize:11,...t.textMuted,marginTop:2}}>{mealsWithCost} of {totalMeals} meals estimated</p>}
+                  </div>
+                </div>
+              );
+            })()}
             {/* Day detail */}
             <div className="space-y-3">
               {mealSlots.map((mealType, slotIdx) => {
@@ -3269,12 +4099,12 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                           onKeyDown={(e) => { if (e.key === 'Enter') renameMealSlot(mealType, editingMealSlot.name); if (e.key === 'Escape') setEditingMealSlot(null); }}
                           onBlur={() => renameMealSlot(mealType, editingMealSlot.name)}
                           maxLength={20}
-                          style={{fontSize:15,fontWeight:600,padding:'2px 6px',borderRadius:6,border:`1.5px solid ${t.accent}`,background:'transparent',color: darkMode ? '#F9FAFB' : '#111827',outline:'none',width:140}} />
+                          style={{fontSize:15,fontWeight:600,padding:'2px 6px',borderRadius:6,border:`1.5px solid ${t.accent}`,background:'transparent',color: textCol,outline:'none',width:140}} />
                       ) : (
                         <button onClick={() => setEditingMealSlot({ index: slotIdx, name: mealType })}
                           style={{background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6}}>
                           <h3 className={`font-semibold ${textClass}`}>{mealType}</h3>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#6B7280' : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{opacity:0.6}}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={mutedCol} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{opacity:0.6}}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                       )}
                       <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -3282,7 +4112,11 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                           <button onClick={() => removeMealSlot(mealType)} className="text-red-600 text-sm">Remove</button>
                         )}
                         {meal ? (
-                          <button onClick={() => removeFromMealPlan(selectedDate, mealType)} className="text-red-600 text-sm">Remove</button>
+                          <button onClick={() => { getFullRecipe(meal); }}
+                            style={{padding:'5px 12px',borderRadius:8,fontSize:12,fontWeight:700,border:'none',cursor:'pointer',
+                              background: accentBg,color: t.accent,display:'flex',alignItems:'center',gap:4}}>
+                            <Play style={{width:12,height:12}} /> Cook
+                          </button>
                         ) : (
                           <button onClick={() => setShowMealPicker(mealType)} className="text-orange-600 text-sm font-medium">+ Add Recipe</button>
                         )}
@@ -3291,7 +4125,11 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                     {meal ? (
                       <div className={`text-sm ${textMutedClass}`}>
                         <p className={`font-medium ${textClass}`}>{meal.name}</p>
-                        <p>{meal.cookTime}{meal.calories ? ` · ${meal.calories} cal` : ''}{meal.servings ? ` · ${meal.servings} servings` : ''}</p>
+                        <p>{meal.cookTime}{meal.calories ? ` · ${meal.calories} cal` : ''}{meal.servings ? ` · ${meal.servings} servings` : ''}{meal.estimatedCost ? ` · ~$${meal.estimatedCost}` : ''}</p>
+                        <button onClick={() => removeFromMealPlan(selectedDate, mealType)}
+                          style={{fontSize:12,fontWeight:600,color:'#ef4444',background:'none',border:'none',cursor:'pointer',marginTop:8,padding:0}}>
+                          Remove from plan
+                        </button>
                       </div>
                     ) : (
                       <p className={`text-sm ${textMutedClass}`}>No meal planned</p>
@@ -3310,7 +4148,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   <button onClick={() => { if (newMealSlotName.trim()) addMealSlot(newMealSlotName); }}
                     disabled={!newMealSlotName.trim()}
                     style={{padding:'12px 16px',borderRadius:12,fontSize:13,fontWeight:700,border:'none',cursor: newMealSlotName.trim() ? 'pointer' : 'not-allowed',
-                      background: newMealSlotName.trim() ? (darkMode ? 'rgba(190,255,70,0.1)' : 'rgba(239,68,68,0.06)') : 'transparent',
+                      background: newMealSlotName.trim() ? (accentBg2) : 'transparent',
                       color: newMealSlotName.trim() ? t.accent : (darkMode ? '#555' : '#9CA3AF'),transition:'all 0.2s',whiteSpace:'nowrap'}}>
                     <Plus style={{width:16,height:16}} />
                   </button>
@@ -3326,10 +4164,10 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             {/* Scanning status */}
             <div className="flex items-center gap-4 fade-up">
               <div style={{position:'relative'}}>
-                <div style={{width:56,height:56,borderRadius:R.card,background: darkMode ? 'rgba(190,255,70,0.06)' : 'rgba(239,68,68,0.06)',...fc}}>
+                <div style={{width:56,height:56,borderRadius:R.card,background:accentBg,...fc}}>
                   <SnapChefLogo size={32} />
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center" style={{background: darkMode ? '#BEFF46' : '#ef4444',boxShadow:`0 2px 8px ${darkMode ? 'rgba(190,255,70,0.3)' : 'rgba(239,68,68,0.3)'}`}}>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center" style={{background: t.accent,boxShadow:`0 2px 8px ${accentBg}`}}>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" style={{color: gradientBtnCol}} />
                 </div>
               </div>
@@ -3338,11 +4176,15 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   {scanProgress.total > 0 ? `Scanning ${images.length} photo${images.length !== 1 ? 's' : ''}...` : 'Finding recipes...'}
                 </p>
                 <p style={{fontSize:13,marginTop:2,...t.textMuted}}>
-                  {scanProgress.total > 0 ? 'Identifying ingredients' + (images.length > 1 ? ` · ${scanProgress.current} of ${images.length} scanned` : '') : 'Matching ingredients to great meals'}
+                  {scanProgress.total > 0 && scanProgress.current < scanProgress.total
+                    ? 'Identifying ingredients' + (images.length > 1 ? ` · ${scanProgress.current} of ${images.length} scanned` : '')
+                    : scanProgress.current >= scanProgress.total && scanProgress.total > 0
+                    ? 'Finding recipes for you...'
+                    : 'Scanning your ingredients'}
                 </p>
                 {scanProgress.total > 0 && (
-                  <div style={{marginTop:8,height:4,borderRadius:2,background: darkMode ? 'rgba(255,255,255,0.05)' : '#E5E7EB',overflow:'hidden'}}>
-                    <div style={{height:'100%',borderRadius:2,transition:'width 0.5s ease-out',width:`${(scanProgress.current / scanProgress.total) * 100}%`,background: darkMode ? 'linear-gradient(90deg, #BEFF46, #9CDD20)' : 'linear-gradient(90deg, #ef4444, #f97316)'}} />
+                  <div style={{marginTop:8,height:4,borderRadius:2,background:subtleBg2,overflow:'hidden'}}>
+                    <div style={{height:'100%',borderRadius:2,transition:'width 0.5s ease-out',width:`${(scanProgress.current / scanProgress.total) * 100}%`,background:gradientBtn}} />
                   </div>
                 )}
               </div>
@@ -3350,7 +4192,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             {/* Skeleton recipe cards */}
             <div className="space-y-3 fade-up-d1">
               <Skeleton className="h-4 w-32" style={{marginBottom:12}} />
-              {[0,1,2].map(i => (
+              {[0,1,2,3].map(i => (
                 <div key={i} className={`${cardClass} border rounded-2xl p-4`} style={{display:'flex',gap:14,animation:`fadeUp 0.4s ease-out ${0.1 + i * 0.08}s both`}}>
                   <Skeleton className="" style={{width:72,height:72,borderRadius:12,flexShrink:0}} />
                   <div style={{flex:1,...fcol,gap:8}}>
@@ -3389,8 +4231,8 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <h2 className={`font-extrabold ${textClass}`} style={{fontSize:24,letterSpacing:'-0.5px'}}>Review Ingredients</h2>
                 <p className={textMutedClass} style={{fontSize:13,marginTop:4}}>Remove wrong items, add anything missed</p>
               </div>
-              <div style={{width:48,height:48,borderRadius:R.card,background: darkMode ? 'rgba(52,211,153,0.1)' : 'rgba(22,163,74,0.06)',...fc}}>
-                <span className="font-bold" style={{fontSize:18,color: darkMode ? '#34D399' : '#16a34a'}}>{ingredients.length}</span>
+              <div style={{width:48,height:48,borderRadius:R.card,background: successBg,...fc}}>
+                <span className="font-bold" style={{fontSize:18,color: successCol}}>{ingredients.length}</span>
               </div>
             </div>
             {/* Photo strip */}
@@ -3398,7 +4240,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}} className="scrollbar-hide">
                 {images.map((img, i) => (
                   <div key={i} onClick={() => { setFullImageIndex(i); setShowFullImage(true); }}
-                    style={{width:72,height:72,borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',border:`2px solid ${darkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB'}`}}>
+                    style={{width:72,height:72,borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',border:`2px solid ${borderLight}`}}>
                     <img src={img.src} alt={`Photo ${i + 1}`} style={{width:'100%',height:'100%',objectFit:'cover'}} />
                   </div>
                 ))}
@@ -3418,7 +4260,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 />
               </div>
               <button aria-label="Voice input" onClick={startVoiceInput} style={{width:48,height:48,borderRadius:12,...fc,background: mutedBg,border:`1px solid ${borderCol}`,cursor:'pointer',flexShrink:0}}>
-                <svg viewBox="0 0 24 24" style={{width:20,height:20,color: darkMode ? '#9CA3AF' : '#6B7280'}} fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                <svg viewBox="0 0 24 24" style={{width:20,height:20,color: textMutedCol}} fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
               </button>
               <button onClick={addIngredient}
                 style={{width:48,height:48,borderRadius:12,...fc,background: gradientBtn,cursor:'pointer',flexShrink:0}}>
@@ -3433,19 +4275,34 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   <button onClick={() => tapConfirm('clear-ing', () => setIngredients([]))} style={{fontSize:13,color:'#ef4444',fontWeight:600,background:'none',border:'none',cursor:'pointer'}}>{confirmId === 'clear-ing' ? 'Tap to confirm' : 'Clear all'}</button>
                 )}
               </div>
-              {ingredients.length > 0 ? (
-                <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-                  {ingredients.map((ing, i) => (
-                    <div key={i} style={{...frow,gap:6,padding:'8px 10px 8px 14px',borderRadius:20,fontSize:15,fontWeight:500,background: darkMode ? 'rgba(52,211,153,0.1)' : 'rgba(22,163,74,0.06)',color: darkMode ? '#6EE7B7' : '#15803d',border:`1px solid ${darkMode ? 'rgba(52,211,153,0.15)' : 'rgba(22,163,74,0.12)'}`}}>
-                      <span>{ing}</span>
-                      <button onClick={() => removeIngredient(i)}
-                        style={{width:22,height:22,borderRadius:11,...fc,background: darkMode ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)',cursor:'pointer',border:'none',transition:'background 0.15s'}}>
-                        <X style={{width:12,height:12,color:'#ef4444'}} />
-                      </button>
+              {ingredients.length > 0 ? (() => {
+                const SHOW_LIMIT = 6;
+                const showAll = expandIngredients || ingredients.length <= SHOW_LIMIT;
+                const visible = showAll ? ingredients : ingredients.slice(0, SHOW_LIMIT);
+                const hiddenCount = ingredients.length - SHOW_LIMIT;
+                return (
+                  <>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                      {visible.map((ing, i) => (
+                        <div key={i} style={{...frow,gap:6,padding:'8px 10px 8px 14px',borderRadius:20,fontSize:15,fontWeight:500,background: successBg,color: greenBrCol,border:`1px solid ${darkMode ? 'rgba(52,211,153,0.15)' : 'rgba(22,163,74,0.12)'}`}}>
+                          <span>{ing}</span>
+                          <button onClick={() => removeIngredient(i)}
+                            style={{width:22,height:22,borderRadius:11,...fc,background: redBg2,cursor:'pointer',border:'none',transition:'background 0.15s'}}>
+                            <X style={{width:12,height:12,color:'#ef4444'}} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
+                    {hiddenCount > 0 && (
+                      <button onClick={() => setExpandIngredients(!expandIngredients)}
+                        style={{...frow,gap:6,justifyContent:'center',padding:'10px 0 2px',fontSize:13,fontWeight:600,color: t.accent,background:'none',border:'none',cursor:'pointer',width:'100%'}}>
+                        <ChevronDown style={{width:16,height:16,transition:'transform 0.2s',transform: expandIngredients ? 'rotate(180deg)' : 'rotate(0deg)'}} />
+                        {expandIngredients ? 'Show less' : `Show ${hiddenCount} more`}
+                      </button>
+                    )}
+                  </>
+                );
+              })() : (
                 <div style={{textAlign:'center',padding:'24px 0'}}>
                   <p style={{fontSize:13,...t.textMuted}}>No ingredients yet. Add some above or re-scan your photos.</p>
                 </div>
@@ -3456,11 +4313,36 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               <button onClick={generateRecipes} disabled={ingredients.length === 0 || streamingRecipes}
                 className="card-hover"
                 style={{width:'100%',borderRadius:R.card,padding:'18px 20px',fontSize:16,fontWeight:700,...fc,gap:10,cursor: (ingredients.length === 0 || streamingRecipes) ? 'not-allowed' : 'pointer',border:'none',
-                  background: (ingredients.length === 0 || streamingRecipes) ? (darkMode ? '#1A1F2B' : '#E5E7EB') : (darkMode ? 'linear-gradient(135deg, #BEFF46, #9CDD20)' : 'linear-gradient(135deg, #ef4444, #f97316)'),
-                  color: (ingredients.length === 0 || streamingRecipes) ? (inactiveCol) : (darkMode ? '#0C0F14' : 'white'),
-                  boxShadow: (ingredients.length > 0 && !streamingRecipes) ? (darkMode ? '0 4px 20px rgba(190,255,70,0.2)' : '0 4px 20px rgba(239,68,68,0.25)') : 'none'}}>
+                  background: (ingredients.length === 0 || streamingRecipes) ? (darkBgCol) : (gradientBtn),
+                  color: (ingredients.length === 0 || streamingRecipes) ? (inactiveCol) : (gradientBtnCol),
+                  boxShadow: (ingredients.length > 0 && !streamingRecipes) ? (gradientShadow) : 'none'}}>
                 {streamingRecipes ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating...</> : <><SnapChefIcon className="w-5 h-5" /> Find Recipes ({ingredients.length})</>}
               </button>
+              {ingredients.length > 0 && (
+                <button onClick={() => {
+                  const existing = pantryItems.map(p => p.name.toLowerCase().trim());
+                  let added = 0;
+                  const newPantry = [...pantryItems];
+                  ingredients.forEach(ing => {
+                    if (!existing.includes(ing.toLowerCase().trim())) {
+                      newPantry.push({ id: Date.now() + Math.random(), name: ing, category: 'Other' });
+                      existing.push(ing.toLowerCase().trim());
+                      added++;
+                    }
+                  });
+                  if (added > 0) {
+                    setPantryItems(newPantry);
+                    saveToStorage('pantry-items', newPantry);
+                    showToast(`${added} item${added !== 1 ? 's' : ''} saved to pantry`);
+                  } else {
+                    showToast('All items already in pantry');
+                  }
+                }}
+                  style={{width:'100%',borderRadius:R.card,padding:'14px 20px',fontSize:15,fontWeight:600,cursor:'pointer',border:`1px solid ${borderCol}`,
+                    background: cardBg,...fc,gap:8,...t.text}}>
+                  <Package style={{width:16,height:16}} /> Save to Pantry
+                </button>
+              )}
               <button onClick={() => nav(images.length > 0 ? 'capture' : 'home')}
                 style={{width:'100%',borderRadius:R.card,padding:'14px 20px',fontSize:15,fontWeight:600,cursor:'pointer',border:'none',
                   background: mutedBg,...t.text}}>
@@ -3479,7 +4361,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <div style={{display:'flex',gap:12,alignItems:'center'}}>
                   {images.length > 0 && (
                     <div onClick={() => { setFullImageIndex(0); setShowFullImage(true); }}
-                      style={{width:56,height:56,borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',border:`2px solid ${darkMode ? 'rgba(255,255,255,0.06)' : '#E5E7EB'}`}}>
+                      style={{width:56,height:56,borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',border:`2px solid ${borderCol}`}}>
                       <img src={images[0].src} alt="Scan" style={{width:'100%',height:'100%',objectFit:'cover'}} />
                     </div>
                   )}
@@ -3503,7 +4385,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 {streamingRecipes && <Loader2 className="w-4 h-4 animate-spin" style={{color: t.accent}} />}
                 {!streamingRecipes && recipes.length > 0 && (
                   <button onClick={regenerateRecipes} title="Get new recipes"
-                    style={{...frow,gap:6,height:38,padding:'0 14px',borderRadius:10,background: darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.06)',border:`1px solid ${borderCol}`,cursor:'pointer'}}>
+                    style={{...frow,gap:6,height:38,padding:'0 14px',borderRadius:10,background: accentBg,border:`1px solid ${borderCol}`,cursor:'pointer'}}>
                     <RefreshCw style={{width:14,height:14,color: t.accent}} />
                     <span style={{fontSize:13,fontWeight:700,color: t.accent}}>New</span>
                   </button>
@@ -3544,17 +4426,17 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             {/* No results state */}
             {recipes.length === 0 && !streamingRecipes && (
               <div style={{...fcol,alignItems:'center',justifyContent:'center',gap:16,padding:'40px 20px',textAlign:'center'}}>
-                <div style={{width:72,height:72,borderRadius:18,background: darkMode ? 'rgba(190,255,70,0.06)' : 'rgba(239,68,68,0.04)',...fc}}>
+                <div style={{width:72,height:72,borderRadius:18,background: accentBgSoft,...fc}}>
                   <Search style={{width:32,height:32,color: t.accent,opacity:0.5}} />
                 </div>
                 <p className="font-bold" style={{fontSize:16,...t.text}}>No recipes found</p>
                 <p style={{fontSize:13,maxWidth:260,...t.textMuted}}>Try different ingredients or a broader search term</p>
-                <button onClick={() => nav('search')} style={{padding:'10px 24px',borderRadius:12,fontSize:13,fontWeight:700,background: darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.06)',color: t.accent,border:'none',cursor:'pointer'}}>Search Again</button>
+                <button onClick={() => nav('search')} style={{padding:'10px 24px',borderRadius:12,fontSize:13,fontWeight:700,background: accentBg,color: t.accent,border:'none',cursor:'pointer'}}>Search Again</button>
               </div>
             )}
             {/* Recipe cards */}
             {showPrefNudge && (
-              <div style={{borderRadius:14,padding:'14px 16px',marginBottom:4,border:`1.5px solid ${darkMode ? 'rgba(190,255,70,0.15)' : 'rgba(239,68,68,0.12)'}`,
+              <div style={{borderRadius:14,padding:'14px 16px',marginBottom:4,border:`1.5px solid ${accentBg4}`,
                 background: darkMode ? 'rgba(190,255,70,0.04)' : 'rgba(239,68,68,0.03)',display:'flex',alignItems:'center',gap:12}}>
                 <span style={{fontSize:24,flexShrink:0}}>🎯</span>
                 <div style={{flex:1,minWidth:0}}>
@@ -3563,7 +4445,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 </div>
                 <div style={{display:'flex',gap:6,flexShrink:0}}>
                   <button onClick={() => setShowPrefNudge(false)} style={{padding:'6px 10px',borderRadius:8,fontSize:12,fontWeight:600,background:'none',border:`1px solid ${borderCol}`,cursor:'pointer',...t.textMuted}}>✕</button>
-                  <button onClick={() => { setShowPrefNudge(false); setShowSettings(true); }} style={{padding:'6px 12px',borderRadius:8,fontSize:12,fontWeight:700,background: darkMode ? '#BEFF46' : '#EF4444',color: darkMode ? '#0C0F14' : '#FFF',border:'none',cursor:'pointer',whiteSpace:'nowrap'}}>Set up</button>
+                  <button onClick={() => { setShowPrefNudge(false); setShowSettings(true); }} style={{padding:'6px 12px',borderRadius:8,fontSize:12,fontWeight:700,background: t.accent,color: rootBg,border:'none',cursor:'pointer',whiteSpace:'nowrap'}}>Set up</button>
                 </div>
               </div>
             )}
@@ -3572,33 +4454,51 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 viewMode === 'grid' ? (
                   <button key={i} onClick={() => getFullRecipe(recipe)} className="card-hover"
                     style={{width:'100%',textAlign:'left',border:`1px solid ${borderCol}`,borderRadius:R.card,padding:0,overflow:'hidden',cursor:'pointer',background: cardBg,animation:`fadeUp 0.35s ease-out ${i * 0.04}s both`,
-                      boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 16px rgba(0,0,0,0.06)',
+                      boxShadow: shadowMd,
                       opacity: tappedRecipeId === recipe.name ? 0.6 : 1, transform: tappedRecipeId === recipe.name ? 'scale(0.97)' : 'none', transition:'opacity 0.2s, transform 0.2s'}}>
                     {/* Recipe visual header */}
-                    {renderRecipeImage(recipe, 400, 96, {height:96})}
+                    {renderRecipeImage(recipe, 400, 160, {height:160})}
                     <div style={{padding:'16px 14px 14px'}}>
                       <div style={{display:'flex',alignItems:'start',justifyContent:'space-between',gap:4,marginBottom:8}}>
                         <h4 className="font-bold" style={{fontSize:15,lineHeight:1.3,...t.text,flex:1}}>{recipe.name}</h4>
                         <button onClick={(e) => { e.stopPropagation(); toggleSaveRecipe(recipe); }} style={{padding:2,background:'none',border:'none',cursor:'pointer',flexShrink:0}}>
-                          <Heart style={{width:18,height:18,color: isRecipeSaved(recipe) ? '#f43f5e' : (darkMode ? '#4A5060' : '#D1D5DB'),fill: isRecipeSaved(recipe) ? '#f43f5e' : 'none'}} />
+                          <Heart style={{width:18,height:18,color: isRecipeSaved(recipe) ? '#f43f5e' : (invertDimCol),fill: isRecipeSaved(recipe) ? '#f43f5e' : 'none'}} />
                         </button>
                       </div>
                       <p style={{fontSize:13,lineHeight:1.4,...t.textMuted,marginBottom:12,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{recipe.description}</p>
                       <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                        <span style={{...frow,gap:4,fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6',...t.textMuted}}>
-                          <Clock style={{width:12,height:12}} /> {recipe.cookTime}
-                        </span>
-                        <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: darkMode ? 'rgba(255,140,66,0.1)' : 'rgba(234,88,12,0.06)',color: darkMode ? '#FF8C42' : '#ea580c'}}>{recipe.difficulty}</span>
-                        {recipe.costTier && (
-                          <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: darkMode ? 'rgba(52,211,153,0.08)' : 'rgba(22,163,74,0.05)',color: darkMode ? '#6EE7B7' : '#15803d'}}>
-                            {recipe.costTier === 'budget' ? '💰' : recipe.costTier === 'moderate' ? '💰💰' : '💰💰💰'}
+                        {recipe.cookTime && (
+                          <span style={{...frow,gap:4,fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: subtleBg2,...t.textMuted}}>
+                            <Clock style={{width:12,height:12}} /> {recipe.cookTime}
                           </span>
                         )}
-                        {pantryItems.length > 0 && recipe.ingredients && (() => { const m = getPantryMatchPercent(recipe); return m > 0 ? (
-                          <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: m >= 80 ? (darkMode ? 'rgba(52,211,153,0.1)' : 'rgba(22,163,74,0.06)') : (darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6'),color: m >= 80 ? (darkMode ? '#34D399' : '#16a34a') : (darkMode ? '#9CA3AF' : '#6B7280')}}>{m}%</span>
+                        {recipe.difficulty && (
+                          <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: orangeBg,color: warnCol}}>{recipe.difficulty}</span>
+                        )}
+                        {recipe.usedCount > 0 && (
+                          <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: successBg,color: successCol}}>
+                            {recipe.usedCount} match{recipe.usedCount !== 1 ? 'es' : ''}
+                          </span>
+                        )}
+                        {recipe.missedCount > 0 && (
+                          <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: yellowBg,color: warnCol}}>
+                            +{recipe.missedCount} needed
+                          </span>
+                        )}
+                        {(recipe.estimatedCost || recipe.costTier) && (
+                          <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: darkMode ? 'rgba(52,211,153,0.08)' : 'rgba(22,163,74,0.05)',color: greenBrCol}}>
+                            {recipe.estimatedCost ? `~$${recipe.estimatedCost}` : (recipe.costTier === 'budget' ? '💰' : recipe.costTier === 'moderate' ? '💰💰' : '💰💰💰')}
+                          </span>
+                        )}
+                        {(() => { const m = getMatchPercent(recipe); return m !== null ? (
+                          <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,
+                            background: m >= 90 ? (successBg) : m >= 60 ? (yellowBg) : (redBg),
+                            color: m >= 90 ? (successCol) : m >= 60 ? (warnCol) : (redLtCol)}}>
+                            {m}% match
+                          </span>
                         ) : null; })()}
                         {allergens.length > 0 && getAllergenWarnings(recipe).length > 0 && (
-                          <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: darkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2',color: darkMode ? '#FCA5A5' : '#B91C1C'}}>⚠️</span>
+                          <span style={{fontSize:11,fontWeight:600,padding:'4px 8px',borderRadius:8,background: redBg,color: redLtCol}}>⚠️</span>
                         )}
                       </div>
                     </div>
@@ -3607,21 +4507,29 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   <button key={i} onClick={() => getFullRecipe(recipe)} className="card-hover"
                     style={{width:'100%',textAlign:'left',...frow,gap:14,padding:'14px 16px',borderRadius:R.card,border:`1px solid ${borderCol}`,cursor:'pointer',background: cardBg,animation:`fadeUp 0.35s ease-out ${i * 0.04}s both`,
                       opacity: tappedRecipeId === recipe.name ? 0.6 : 1, transform: tappedRecipeId === recipe.name ? 'scale(0.98)' : 'none', transition:'opacity 0.2s, transform 0.2s'}}>
-                    {renderRecipeImage(recipe, 88, 44, {width:44,height:44,borderRadius:R.inner,flexShrink:0})}
+                    {renderRecipeImage(recipe, 88, 56, {width:56,height:56,borderRadius:R.inner,flexShrink:0})}
                     <div style={{flex:1,minWidth:0}}>
                       <h4 className="font-bold" style={{fontSize:15,...t.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{recipe.name}</h4>
                       <div style={{...frow,gap:10,marginTop:4}}>
-                        <span style={{...frow,gap:3,fontSize:13,...t.textMuted}}><Clock style={{width:12,height:12}} /> {recipe.cookTime}</span>
-                        <span style={{fontSize:13,fontWeight:600,color: darkMode ? '#FF8C42' : '#ea580c'}}>{recipe.difficulty}</span>
-                        {recipe.costTier && (
-                          <span style={{fontSize:12}}>
-                            {recipe.costTier === 'budget' ? '💰' : recipe.costTier === 'moderate' ? '💰💰' : '💰💰💰'}
+                        {recipe.cookTime && <span style={{...frow,gap:3,fontSize:13,...t.textMuted}}><Clock style={{width:12,height:12}} /> {recipe.cookTime}</span>}
+                        {recipe.difficulty && <span style={{fontSize:13,fontWeight:600,color: warnCol}}>{recipe.difficulty}</span>}
+                        {recipe.usedCount > 0 && <span style={{fontSize:12,fontWeight:600,color: successCol}}>{recipe.usedCount}✓</span>}
+                        {recipe.missedCount > 0 && <span style={{fontSize:12,fontWeight:600,color: warnCol}}>+{recipe.missedCount}</span>}
+                        {(recipe.estimatedCost || recipe.costTier) && (
+                          <span style={{fontSize:12,fontWeight:600,color: greenBrCol}}>
+                            {recipe.estimatedCost ? `~$${recipe.estimatedCost}` : (recipe.costTier === 'budget' ? '💰' : recipe.costTier === 'moderate' ? '💰💰' : '💰💰💰')}
                           </span>
                         )}
+                        {(() => { const m = getMatchPercent(recipe); return m !== null ? (
+                          <span style={{fontSize:12,fontWeight:700,
+                            color: m >= 90 ? (successCol) : m >= 60 ? (warnCol) : (redLtCol)}}>
+                            {m}%
+                          </span>
+                        ) : null; })()}
                       </div>
                     </div>
                     <button onClick={(e) => { e.stopPropagation(); toggleSaveRecipe(recipe); }} style={{padding:6,background:'none',border:'none',cursor:'pointer',flexShrink:0}}>
-                      <Heart style={{width:20,height:20,color: isRecipeSaved(recipe) ? '#f43f5e' : (darkMode ? '#4A5060' : '#D1D5DB'),fill: isRecipeSaved(recipe) ? '#f43f5e' : 'none'}} />
+                      <Heart style={{width:20,height:20,color: isRecipeSaved(recipe) ? '#f43f5e' : (invertDimCol),fill: isRecipeSaved(recipe) ? '#f43f5e' : 'none'}} />
                     </button>
                   </button>
                 )
@@ -3631,28 +4539,28 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
         )}
 
         {/* ==================== RECIPE DETAIL ==================== */}
-        {selectedRecipe && !cookMode && (
+        {selectedRecipe && !cookMode && step === 'results' && (
           <div className="fade-up" style={{...fcol,gap:16}}>
             {/* Hero card */}
             <div className={`${cardClass} border`} style={{borderRadius:20,overflow:'hidden',...t.card,boxShadow: darkMode ? '0 4px 24px rgba(0,0,0,0.4)' : '0 2px 20px rgba(0,0,0,0.06)'}}>
               {/* Recipe photo hero */}
-              {renderRecipeImage(selectedRecipe, 600, 180, {height:180})}
+              {renderRecipeImage(selectedRecipe, 600, 220, {height:220})}
               <div style={{padding:'24px 22px 20px'}}>
                 <div style={{display:'flex',alignItems:'start',justifyContent:'space-between',gap:8,marginBottom:10}}>
                   <h2 className="font-extrabold" style={{fontSize:22,letterSpacing:'-0.4px',lineHeight:1.25,...t.text,flex:1}}>{selectedRecipe.name}</h2>
-                  <button onClick={() => toggleSaveRecipe(selectedRecipe)} aria-label="Save recipe" style={{padding:6,background: darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6',borderRadius:10,border:'none',cursor:'pointer',flexShrink:0}}>
-                    <Heart style={{width:22,height:22,color: isRecipeSaved(selectedRecipe) ? '#f43f5e' : (darkMode ? '#4A5060' : '#D1D5DB'),fill: isRecipeSaved(selectedRecipe) ? '#f43f5e' : 'none'}} />
+                  <button onClick={() => toggleSaveRecipe(selectedRecipe)} aria-label="Save recipe" style={{padding:6,background: subtleBg2,borderRadius:10,border:'none',cursor:'pointer',flexShrink:0}}>
+                    <Heart style={{width:22,height:22,color: isRecipeSaved(selectedRecipe) ? '#f43f5e' : (invertDimCol),fill: isRecipeSaved(selectedRecipe) ? '#f43f5e' : 'none'}} />
                   </button>
                 </div>
                 <p style={{fontSize:15,lineHeight:1.5,...t.textMuted,marginBottom:16}}>{selectedRecipe.description}</p>
                 {/* Meta badges row */}
                 <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:16}}>
-                  <span style={{...frow,gap:5,fontSize:13,fontWeight:600,padding:'6px 12px',borderRadius:10,background: darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6',...t.text}}>
+                  <span style={{...frow,gap:5,fontSize:13,fontWeight:600,padding:'6px 12px',borderRadius:10,background: subtleBg2,...t.text}}>
                     <Clock style={{width:14,height:14,...t.textMuted}} /> {selectedRecipe.cookTime}
                   </span>
-                  <span style={{fontSize:13,fontWeight:600,padding:'6px 12px',borderRadius:10,background: darkMode ? 'rgba(255,140,66,0.1)' : 'rgba(234,88,12,0.06)',color: darkMode ? '#FF8C42' : '#ea580c'}}>{selectedRecipe.difficulty}</span>
+                  <span style={{fontSize:13,fontWeight:600,padding:'6px 12px',borderRadius:10,background: orangeBg,color: warnCol}}>{selectedRecipe.difficulty}</span>
                   {selectedRecipe.cuisine && (
-                    <span style={{fontSize:13,fontWeight:600,padding:'6px 12px',borderRadius:10,background: darkMode ? 'rgba(176,124,255,0.1)' : 'rgba(124,58,237,0.06)',color: darkMode ? '#B07CFF' : '#7c3aed'}}>{selectedRecipe.cuisine}</span>
+                    <span style={{fontSize:13,fontWeight:600,padding:'6px 12px',borderRadius:10,background: purpleBg,color: purpleCol}}>{selectedRecipe.cuisine}</span>
                   )}
                 </div>
                 {/* Star rating */}
@@ -3665,15 +4573,15 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   {recipeRatings[selectedRecipe.name] && <span style={{fontSize:13,marginLeft:6,...t.textMuted}}>Your rating</span>}
                 </div>
                 {/* Servings control */}
-                <div style={{...frow,gap:12,padding:'12px 16px',borderRadius:12,background: subtleBg,border:`1px solid ${darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6'}`}}>
+                <div style={{...frow,gap:12,padding:'12px 16px',borderRadius:12,background: subtleBg,border:`1px solid ${subtleBg2}`}}>
                   <span style={{fontSize:13,fontWeight:600,...t.text,flex:1}}>Servings</span>
                   <button aria-label="Decrease servings" onClick={() => { const n = Math.max(1, servings - 1); setServings(n); savePreferredServings(selectedRecipe.name, n); }}
-                    style={{width:34,height:34,borderRadius:10,...fc,border:`1px solid ${darkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB'}`,background:'none',cursor:'pointer'}}>
+                    style={{width:34,height:34,borderRadius:10,...fc,border:`1px solid ${borderLight}`,background:'none',cursor:'pointer'}}>
                     <Minus style={{width:16,height:16,...t.textMuted}} />
                   </button>
                   <span className="font-bold" style={{fontSize:18,width:28,textAlign:'center',...t.text}}>{servings}</span>
                   <button aria-label="Increase servings" onClick={() => { const n = servings + 1; setServings(n); savePreferredServings(selectedRecipe.name, n); }}
-                    style={{width:34,height:34,borderRadius:10,...fc,border:`1px solid ${darkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB'}`,background:'none',cursor:'pointer'}}>
+                    style={{width:34,height:34,borderRadius:10,...fc,border:`1px solid ${borderLight}`,background:'none',cursor:'pointer'}}>
                     <Plus style={{width:16,height:16,...t.textMuted}} />
                   </button>
                 </div>
@@ -3684,7 +4592,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               <div style={{display:'flex',alignItems:'start',gap:12,padding:'14px 16px',borderRadius:R.card,background: darkMode ? 'rgba(239,68,68,0.06)' : '#FEF2F2',border:`1px solid ${darkMode ? 'rgba(239,68,68,0.12)' : '#FECACA'}`}}>
                 <AlertCircle style={{width:18,height:18,color:'#ef4444',flexShrink:0,marginTop:1}} />
                 <div>
-                  <span className="font-bold" style={{fontSize:13,color: darkMode ? '#FCA5A5' : '#B91C1C'}}>Allergen Warning</span>
+                  <span className="font-bold" style={{fontSize:13,color: redLtCol}}>Allergen Warning</span>
                   <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}>
                     {getAllergenWarnings(selectedRecipe).map(w => (
                       <span key={w.allergen} style={{fontSize:11,fontWeight:600,padding:'3px 8px',borderRadius:6,background: darkMode ? 'rgba(239,68,68,0.1)' : '#FEE2E2',color: darkMode ? '#FCA5A5' : '#991B1B'}}>{w.allergen}: {w.triggers.join(', ')}</span>
@@ -3695,31 +4603,36 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             )}
             {/* Budget estimate */}
             {(() => {
+              const cost = selectedRecipe.estimatedCost;
               const tier = selectedRecipe.costTier;
-              if (!tier) return null;
-              const t3 = tier.toLowerCase();
-              const emoji = t3.includes('budget') ? '💰' : t3.includes('moderate') ? '💰💰' : '💰💰💰';
-              const label = t3.includes('budget') ? 'Budget-friendly' : t3.includes('moderate') ? 'Moderate' : 'Pricey';
-              const col = t3.includes('budget') ? (darkMode ? '#34D399' : '#16a34a') : t3.includes('moderate') ? (darkMode ? '#FACC15' : '#D97706') : (darkMode ? '#FF8C42' : '#ea580c');
+              if (!tier && !cost) return null;
+              const t3 = (tier || '').toLowerCase();
+              const col = cost ? (parseFloat(cost) < 3 ? (successCol) : parseFloat(cost) < 6 ? (darkMode ? '#FACC15' : '#D97706') : (warnCol))
+                : t3.includes('budget') ? (successCol) : t3.includes('moderate') ? (darkMode ? '#FACC15' : '#D97706') : (warnCol);
+              const label = cost ? `~$${cost}/serving` : (t3.includes('budget') ? 'Budget-friendly' : t3.includes('moderate') ? 'Moderate' : 'Pricey');
+              const totalCost = cost && selectedRecipe.servings ? `~$${(parseFloat(cost) * (selectedRecipe.servings || 1)).toFixed(2)} total` : null;
               return (
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',borderRadius:R.card,background: subtleBg,border:`1px solid ${darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6'}`,animation:'fadeUp 0.3s ease-out both'}}>
-                <span style={{fontSize:13,...t.textMuted}}>Cost estimate</span>
-                <span style={{fontSize:14,fontWeight:700,color:col}}>{emoji} {label}</span>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',borderRadius:R.card,background: subtleBg,border:`1px solid ${subtleBg2}`,animation:'fadeUp 0.3s ease-out both'}}>
+                <span style={{fontSize:13,...t.textMuted}}>Est. cost</span>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  {totalCost && <span style={{fontSize:12,...t.textMuted}}>{totalCost}</span>}
+                  <span style={{fontSize:14,fontWeight:700,color:col}}>{label}</span>
+                </div>
               </div>
             ); })()}
             {/* Primary action — Start Cooking */}
             <button onClick={() => startCookMode(selectedRecipe)} className="card-hover"
               disabled={selectedRecipe.loading || !selectedRecipe.instructions?.length}
               style={{width:'100%',borderRadius:R.card,padding:'18px 20px',fontSize:16,fontWeight:700,...fc,gap:10,cursor: (selectedRecipe.loading || !selectedRecipe.instructions?.length) ? 'not-allowed' : 'pointer',border:'none',
-                background: (selectedRecipe.loading || !selectedRecipe.instructions?.length) ? (darkMode ? 'rgba(255,255,255,0.06)' : '#E5E7EB') : gradientBtn,
-                color: (selectedRecipe.loading || !selectedRecipe.instructions?.length) ? (darkMode ? '#4A5060' : '#9CA3AF') : gradientBtnCol,
+                background: (selectedRecipe.loading || !selectedRecipe.instructions?.length) ? (borderCol) : gradientBtn,
+                color: (selectedRecipe.loading || !selectedRecipe.instructions?.length) ? (textDimCol) : gradientBtnCol,
                 boxShadow: (selectedRecipe.loading || !selectedRecipe.instructions?.length) ? 'none' : gradientShadow}}>
               <Play style={{width:20,height:20}} /> {selectedRecipe.loading ? 'Loading...' : !selectedRecipe.instructions?.length ? 'Loading recipe...' : 'Start CookAlong'}
             </button>
             {/* Secondary actions — compact 2-column */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
               {selectedRecipe.ingredients && (
-                <button onClick={() => { pantryItems.length > 0 ? addMissingToShoppingList(selectedRecipe) : addToShoppingList(selectedRecipe.ingredients); }} className="card-hover"
+                <button onClick={() => { pantryItems.length > 0 ? addMissingToShoppingList(selectedRecipe) : addToShoppingList(selectedRecipe.ingredients, selectedRecipe.name); }} className="card-hover"
                   style={{padding:'12px 14px',borderRadius:12,fontSize:13,fontWeight:600,...fc,gap:6,cursor:'pointer',border:`1px solid ${borderCol}`,background: cardBg,...t.text}}>
                   <ShoppingCart style={{width:14,height:14}} /> {pantryItems.length > 0 ? 'Add Missing' : 'Add to Shopping'}
                 </button>
@@ -3752,11 +4665,11 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                       border: logged ? '1px solid rgba(234,179,8,0.4)' : `1px solid ${borderCol}`,
                       background: logged ? (darkMode ? 'rgba(234,179,8,0.1)' : 'rgba(234,179,8,0.08)') : cardBg,
                       ...t.text,
-                      color: logged ? '#EAB308' : (darkMode ? '#F9FAFB' : '#111827'),
+                      color: logged ? '#EAB308' : (textCol),
                       transition: 'all 0.3s ease'}}>
                     <Star style={{width:14,height:14,
                       fill: logged ? '#EAB308' : 'none',
-                      color: logged ? '#EAB308' : (darkMode ? '#F9FAFB' : '#111827'),
+                      color: logged ? '#EAB308' : (textCol),
                       transition: 'all 0.3s ease',
                       animation: logged ? 'starPop 0.4s ease' : 'none'}} />
                     {logged ? 'Logged ✓' : 'Log Calories'}
@@ -3824,7 +4737,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <div className={`${cardClass} border`} style={{borderRadius:R.card,padding:'22px 20px',...t.card}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
                     <h3 className="font-bold" style={{fontSize:16,...t.text}}>Ingredients</h3>
-                    <button onClick={() => addToShoppingList(selectedRecipe.ingredients)} style={{...frow,gap:5,fontSize:13,fontWeight:600,color: t.accent,background:'none',border:'none',cursor:'pointer'}}>
+                    <button onClick={() => addToShoppingList(selectedRecipe.ingredients, selectedRecipe.name)} style={{...frow,gap:5,fontSize:13,fontWeight:600,color: t.accent,background:'none',border:'none',cursor:'pointer'}}>
                       <ShoppingCart style={{width:14,height:14}} /> Add to list
                     </button>
                   </div>
@@ -3844,7 +4757,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                               updated[i] = { ...updated[i], amount: editingIngredient.amount, item: editingIngredient.item };
                               setSelectedRecipe(prev => ({...prev, ingredients: updated}));
                               setEditingIngredient(null);
-                            }} style={{padding:'4px 10px',borderRadius:6,fontSize:13,fontWeight:700,background: t.accent,color: darkMode ? '#0C0F14' : '#FFF',border:'none',cursor:'pointer'}}>✓</button>
+                            }} style={{padding:'4px 10px',borderRadius:6,fontSize:13,fontWeight:700,background: t.accent,color: rootBg,border:'none',cursor:'pointer'}}>✓</button>
                           </div>
                         ) : (
                           <button onClick={() => setEditingIngredient({ index: i, amount: ing.amount || '', item: ing.item || '' })}
@@ -3888,10 +4801,10 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 {/* Tips */}
                 {selectedRecipe.tips && selectedRecipe.tips.length > 0 ? (
                   <div className={`${darkMode ? 'bg-amber-900/20 border-amber-800/50' : 'bg-amber-50 border-amber-200'} border rounded-2xl p-5`} style={{animation:'fadeUp 0.3s ease-out both'}}>
-                    <p className={`font-bold text-sm mb-3 ${darkMode ? 'text-amber-200' : 'text-amber-900'}`}>Chef's Tips</p>
+                    <p className={`font-bold text-sm mb-3 ${amberText2Class}`}>Chef's Tips</p>
                     <ul className="space-y-2">
                       {selectedRecipe.tips.map((tip, i) => (
-                        <li key={i} className={`text-sm flex items-start gap-2 ${darkMode ? 'text-amber-300' : 'text-amber-800'}`}>
+                        <li key={i} className={`text-sm flex items-start gap-2 ${amberTextClass}`}>
                           <span className="mt-1">💡</span> {tip}
                         </li>
                       ))}
@@ -3913,7 +4826,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   {selectedRecipe.pairings ? (
                     <div className="space-y-2">
                       {selectedRecipe.pairings.map((p, i) => (
-                        <div key={i} className={`flex items-start gap-3 p-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                        <div key={i} className={`flex items-start gap-3 p-3 rounded-xl ${bgSubtleClass}`}>
                           <span className="text-lg">{p.type === 'wine' ? '🍷' : p.type === 'beer' ? '🍺' : p.type === 'cocktail' ? '🍸' : '🥤'}</span>
                           <div>
                             <p className={`font-semibold text-sm ${textClass}`}>{p.drink}</p>
@@ -3977,7 +4890,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   <ChevronDown style={{width:18,height:18,...t.textMuted,transform: remixOpen ? 'rotate(180deg)' : 'none',transition:'transform 0.2s'}} />
                 </button>
                 {remixOpen && (
-                  <div style={{padding:'0 18px 18px',borderTop:`1px solid ${darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6'}`}}>
+                  <div style={{padding:'0 18px 18px',borderTop:`1px solid ${subtleBg2}`}}>
                     <div style={{display:'flex',flexWrap:'wrap',gap:6,paddingTop:14,paddingBottom:12}}>
                       {['Make it spicier', 'Add more protein', 'Make it kid-friendly'].map(suggestion => (
                         <button key={suggestion} onClick={() => { setRemixInput(suggestion); }}
@@ -3991,15 +4904,15 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                         {remixHistory.map((msg, i) => (
                           <div key={i} style={{display:'flex',justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'}}>
                             <div style={{maxWidth:'80%',padding:'8px 12px',borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',fontSize:13,lineHeight:1.4,
-                              background: msg.role === 'user' ? (darkMode ? 'rgba(190,255,70,0.12)' : 'rgba(239,68,68,0.08)') : (darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6'),
-                              color: msg.role === 'user' ? t.accent : (darkMode ? '#D1D5DB' : '#374151')}}>
+                              background: msg.role === 'user' ? (accentBg3) : (subtleBg2),
+                              color: msg.role === 'user' ? t.accent : (headCol)}}>
                               {msg.text}
                             </div>
                           </div>
                         ))}
                         {remixLoading && (
                           <div style={{display:'flex',justifyContent:'flex-start'}}>
-                            <div style={{padding:'8px 12px',borderRadius:'12px 12px 12px 4px',fontSize:13,background: darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6',...t.textMuted}}>
+                            <div style={{padding:'8px 12px',borderRadius:'12px 12px 12px 4px',fontSize:13,background: subtleBg2,...t.textMuted}}>
                               Remixing<span className="animate-pulse">...</span>
                             </div>
                           </div>
@@ -4014,8 +4927,8 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                         style={{flex:1,padding:'12px 14px',borderRadius:10,fontSize:13}} />
                       <button onClick={sendRemix} disabled={!remixInput.trim() || remixLoading}
                         style={{padding:'12px 16px',borderRadius:10,fontSize:13,fontWeight:700,cursor: !remixInput.trim() || remixLoading ? 'not-allowed' : 'pointer',border:'none',
-                          background: !remixInput.trim() || remixLoading ? (darkMode ? '#1A1F2B' : '#E5E7EB') : (darkMode ? 'linear-gradient(135deg, #BEFF46, #9CDD20)' : 'linear-gradient(135deg, #ef4444, #f97316)'),
-                          color: !remixInput.trim() || remixLoading ? (inactiveCol) : (darkMode ? '#0C0F14' : 'white')}}>
+                          background: !remixInput.trim() || remixLoading ? (darkBgCol) : (gradientBtn),
+                          color: !remixInput.trim() || remixLoading ? (inactiveCol) : (gradientBtnCol)}}>
                         Remix
                       </button>
                     </div>
@@ -4023,7 +4936,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 )}
               </div>
             )}
-            <button onClick={() => { setSelectedRecipe(null); setRemixOpen(false); setRemixHistory([]); }} className={`card-hover w-full ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${textClass} rounded-2xl p-4 font-semibold transition`}>
+            <button onClick={() => { setSelectedRecipe(null); setRemixOpen(false); setRemixHistory([]); }} className={`card-hover w-full ${btnSecClass} ${textClass} rounded-2xl p-4 font-semibold transition`}>
               ← Back to Recipes
             </button>
           </div>
@@ -4054,7 +4967,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <button onClick={startVoiceCookMode} aria-label="Voice commands"
                   className={`transition ${voiceListening ? 'animate-pulse' : ''}`}
                   style={{width:44,height:44,borderRadius:12,...fc,border:'none',cursor:'pointer',
-                    background: voiceListening ? '#EF4444' : (darkMode ? 'rgba(190,255,70,0.08)' : '#F3F4F6'),
+                    background: voiceListening ? '#EF4444' : (accentBgAlt),
                     color: voiceListening ? '#FFF' : t.accent}}>
                   {voiceListening ? <span style={{fontSize:16}}>●</span> : <span style={{fontSize:18}}>🎤</span>}
                 </button>
@@ -4068,7 +4981,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               {selectedRecipe.instructions?.map((_, i) => (
                 <button key={i} onClick={() => setCurrentStep(i)} aria-label={`Go to step ${i+1}`}
                   style={{width: i === currentStep ? 28 : 10,height:10,borderRadius:5,border:'none',cursor:'pointer',transition:'all 0.3s ease',
-                    background: i < currentStep ? t.accent : i === currentStep ? `linear-gradient(90deg, ${t.accent}, ${darkMode ? '#9CDD20' : '#f97316'})` : (darkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB')}}>
+                    background: i < currentStep ? t.accent : i === currentStep ? `linear-gradient(90deg, ${t.accent}, ${t.accentMuted})` : (borderLight)}}>
                 </button>
               ))}
             </div>
@@ -4086,7 +4999,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               <div style={{padding:'20px 24px 0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                 <div style={{...frow,gap:10}}>
                   <div style={{width:40,height:40,borderRadius:12,...fc,fontSize:18,fontWeight:800,
-                    background:`linear-gradient(135deg, ${t.accent}, ${darkMode ? '#9CDD20' : '#f97316'})`,color: darkMode ? '#0C0F14' : '#FFF'}}>{currentStep + 1}</div>
+                    background:`linear-gradient(135deg, ${t.accent}, ${t.accentMuted})`,color: rootBg}}>{currentStep + 1}</div>
                   <span style={{fontSize:15,fontWeight:600,...t.textMuted}}>of {selectedRecipe.instructions?.length || 0}</span>
                 </div>
               </div>
@@ -4097,7 +5010,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 {detectTimer(selectedRecipe.instructions?.[currentStep]) && (!timers[currentStep] || timers[currentStep] === 0) && (
                   <button onClick={() => startTimer(currentStep, detectTimer(selectedRecipe.instructions[currentStep]).seconds)}
                     style={{...frow,gap:10,padding:'16px 32px',borderRadius:R.card,fontSize:18,fontWeight:700,border:'none',cursor:'pointer',
-                      background:`linear-gradient(135deg, ${t.accent}, ${darkMode ? '#9CDD20' : '#f97316'})`,color: darkMode ? '#0C0F14' : '#FFF',
+                      background:`linear-gradient(135deg, ${t.accent}, ${t.accentMuted})`,color: rootBg,
                       boxShadow: gradientShadow}}>
                     <Play style={{width:20,height:20}} /> Start {detectTimer(selectedRecipe.instructions[currentStep]).label} Timer
                   </button>
@@ -4108,7 +5021,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <div style={{padding:'0 24px 24px',...fcol,alignItems:'center',gap:12}}>
                   <div style={{position:'relative',width:120,height:120}}>
                     <svg width="120" height="120" viewBox="0 0 120 120" style={{transform:'rotate(-90deg)'}}>
-                      <circle cx="60" cy="60" r="52" fill="none" stroke={darkMode ? 'rgba(255,255,255,0.06)' : '#E5E7EB'} strokeWidth="6" />
+                      <circle cx="60" cy="60" r="52" fill="none" stroke={borderCol} strokeWidth="6" />
                       <circle cx="60" cy="60" r="52" fill="none" stroke={t.accent} strokeWidth="6" strokeLinecap="round"
                         strokeDasharray={`${2 * Math.PI * 52}`} strokeDashoffset={`${2 * Math.PI * 52 * (1 - (timers[currentStep] / ((detectTimer(selectedRecipe.instructions?.[currentStep])?.seconds) || timers[currentStep] || 1)))}`}
                         style={{transition:'stroke-dashoffset 1s linear'}} />
@@ -4119,8 +5032,8 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   </div>
                   <button onClick={() => activeTimer === currentStep ? pauseTimer() : setActiveTimer(currentStep)}
                     style={{padding:'12px 40px',borderRadius:R.card,fontSize:16,fontWeight:700,border:'none',cursor:'pointer',...frow,gap:8,
-                      background: activeTimer === currentStep ? 'rgba(255,92,114,0.1)' : `linear-gradient(135deg, ${t.accent}, ${darkMode ? '#9CDD20' : '#f97316'})`,
-                      color: activeTimer === currentStep ? '#FF5C72' : (darkMode ? '#0C0F14' : '#FFF')}}>
+                      background: activeTimer === currentStep ? 'rgba(255,92,114,0.1)' : `linear-gradient(135deg, ${t.accent}, ${t.accentMuted})`,
+                      color: activeTimer === currentStep ? '#FF5C72' : (rootBg)}}>
                     {activeTimer === currentStep ? <><Pause style={{width:18,height:18}} /> Pause</> : <><Play style={{width:18,height:18}} /> {timers[currentStep] > 0 && activeTimer !== currentStep ? 'Resume' : 'Start'}</>}
                   </button>
                 </div>
@@ -4131,7 +5044,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                     {getStepIngredients(selectedRecipe.instructions[currentStep], selectedRecipe.ingredients).map((ing, j) => (
                       <span key={j} style={{fontSize:11,fontWeight:600,padding:'5px 10px',borderRadius:8,
-                        background: darkMode ? 'rgba(190,255,70,0.06)' : 'rgba(239,68,68,0.04)',color: t.accent}}>
+                        background: accentBgSoft,color: t.accent}}>
                         {convertToMetric(scaleIngredient(ing, originalServings, servings))} {ing.item || ing.name}
                       </span>
                     ))}
@@ -4151,14 +5064,14 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               <button onClick={() => setCurrentStep(Math.max(0, currentStep - 1))} disabled={currentStep === 0}
                 aria-label="Previous step"
                 style={{padding:'24px 16px',borderRadius:R.card,fontSize:18,fontWeight:700,border:'none',cursor: currentStep === 0 ? 'not-allowed' : 'pointer',
-                  background: currentStep === 0 ? (darkMode ? 'rgba(255,255,255,0.02)' : '#F3F4F6') : (darkMode ? 'rgba(255,255,255,0.06)' : '#E5E7EB'),
+                  background: currentStep === 0 ? (darkMode ? 'rgba(255,255,255,0.02)' : '#F3F4F6') : (borderCol),
                   color: currentStep === 0 ? (darkMode ? '#2A2D35' : '#D1D5DB') : (darkMode ? '#E5E7EB' : '#111827')}}>
                 ← Back
               </button>
               <button onClick={() => { if (currentStep < (selectedRecipe.instructions?.length || 0) - 1) setCurrentStep(currentStep + 1); else completeCook(); }}
                 aria-label={currentStep < (selectedRecipe.instructions?.length || 0) - 1 ? 'Next step' : 'Finish cooking'}
                 style={{padding:'24px 16px',borderRadius:R.card,fontSize:18,fontWeight:700,border:'none',cursor:'pointer',
-                  background:`linear-gradient(135deg, ${t.accent}, ${darkMode ? '#9CDD20' : '#f97316'})`,color: darkMode ? '#0C0F14' : '#FFF',
+                  background:`linear-gradient(135deg, ${t.accent}, ${t.accentMuted})`,color: rootBg,
                   boxShadow: gradientShadow}}>
                 {currentStep < (selectedRecipe.instructions?.length || 0) - 1 ? 'Next →' : '✓ Done!'}
               </button>
@@ -4180,9 +5093,9 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                       <button key={i} onClick={() => setCheckedIngredients(prev => ({...prev, [key]: !prev[key]}))}
                         style={{...frow,gap:10,padding:'8px 0',background:'none',border:'none',cursor:'pointer',textAlign:'left',width:'100%',
                           textDecoration: isChecked ? 'line-through' : 'none',opacity: isChecked ? 0.4 : 1,transition:'all 0.2s ease'}}>
-                        <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${isChecked ? t.accent : (darkMode ? 'rgba(255,255,255,0.15)' : '#D1D5DB')}`,
+                        <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${isChecked ? t.accent : (borderHeavy)}`,
                           background: isChecked ? t.accent : 'transparent',...fc,flexShrink:0,transition:'all 0.2s ease'}}>
-                          {isChecked && <span style={{color: darkMode ? '#0C0F14' : '#FFF',fontSize:13,fontWeight:800}}>✓</span>}
+                          {isChecked && <span style={{color: rootBg,fontSize:13,fontWeight:800}}>✓</span>}
                         </div>
                         <span style={{fontSize:15,...t.text}}>{convertToMetric(scaleIngredient(ing, originalServings, servings))} {ing.item || ing.name}</span>
                       </button>
@@ -4200,7 +5113,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
         {/* Cook Complete celebration */}
         {showCookComplete && selectedRecipe && (
           <div className="screen-enter" style={{...fcol,alignItems:'center',justifyContent:'center',gap:20,minHeight:'60vh',textAlign:'center',padding:'20px 0'}}>
-            <div style={{width:100,height:100,borderRadius:28,background:`linear-gradient(135deg, ${t.accent}, ${darkMode ? '#9CDD20' : '#f97316'})`,...fc,
+            <div style={{width:100,height:100,borderRadius:28,background:`linear-gradient(135deg, ${t.accent}, ${t.accentMuted})`,...fc,
               boxShadow: `0 8px 40px ${darkMode ? 'rgba(190,255,70,0.3)' : 'rgba(239,68,68,0.3)'}`,animation:'bounceIn 0.5s ease-out'}}>
               <span style={{fontSize:48}}>🎉</span>
             </div>
@@ -4263,15 +5176,15 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                       <button onClick={() => setSavedFilter(`col:${col.name}`)}
                         style={{padding:'8px 12px 8px 14px',borderRadius: '10px 0 0 10px',fontSize:13,fontWeight:600,whiteSpace:'nowrap',cursor:'pointer',
                           border: savedFilter === `col:${col.name}` ? `2px solid ${t.accent}` : `1px solid ${borderCol}`,borderRight:'none',
-                          background: savedFilter === `col:${col.name}` ? (darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.04)') : cardBg,
-                          color: savedFilter === `col:${col.name}` ? t.accent : (darkMode ? '#D1D5DB' : '#374151')}}>
+                          background: savedFilter === `col:${col.name}` ? (accentBg) : cardBg,
+                          color: savedFilter === `col:${col.name}` ? t.accent : (headCol)}}>
                         {col.name} ({col.recipes?.length || 0})
                       </button>
                       <button onClick={() => tapConfirm(`del-col-${col.id}`, () => deleteCollection(col.id))}
                         style={{padding:'8px 10px',borderRadius:'0 10px 10px 0',fontSize:11,cursor:'pointer',
                           border: savedFilter === `col:${col.name}` ? `2px solid ${t.accent}` : `1px solid ${borderCol}`,borderLeft:'none',
-                          background: savedFilter === `col:${col.name}` ? (darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.04)') : cardBg,
-                          color: confirmId === `del-col-${col.id}` ? '#ef4444' : (darkMode ? '#6B7280' : '#9CA3AF')}}>
+                          background: savedFilter === `col:${col.name}` ? (accentBg) : cardBg,
+                          color: confirmId === `del-col-${col.id}` ? '#ef4444' : (mutedCol)}}>
                         {confirmId === `del-col-${col.id}` ? '⚠' : '✕'}
                       </button>
                     </div>
@@ -4292,8 +5205,8 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 className={`flex-1 px-3 py-2 rounded-lg border ${inputClass} text-sm`} />
               <button onClick={createCollection} disabled={!newCollection.trim()}
                 style={{padding:'8px 14px',borderRadius:10,fontSize:13,fontWeight:700,border:'none',cursor: newCollection.trim() ? 'pointer' : 'not-allowed',
-                  background: newCollection.trim() ? (darkMode ? 'rgba(190,255,70,0.1)' : 'rgba(239,68,68,0.06)') : (darkMode ? 'rgba(255,255,255,0.03)' : '#F3F4F6'),
-                  color: newCollection.trim() ? t.accent : (darkMode ? '#4A5060' : '#9CA3AF')}}>
+                  background: newCollection.trim() ? (accentBg2) : (darkMode ? 'rgba(255,255,255,0.03)' : '#F3F4F6'),
+                  color: newCollection.trim() ? t.accent : (textDimCol)}}>
                 + Create
               </button>
             </div>
@@ -4330,7 +5243,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   </div>
                   <p className="font-bold" style={{fontSize:16,...t.text}}>No saved recipes yet</p>
                   <p style={{fontSize:13,marginTop:6,maxWidth:240,margin:'6px auto 0',...t.textMuted}}>Tap the heart on any recipe to save it here for quick access</p>
-                  <button onClick={() => nav('search')} style={{marginTop:16,padding:'10px 24px',borderRadius:12,fontSize:13,fontWeight:700,background: darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.06)',color: t.accent,border:'none',cursor:'pointer'}}>Browse Recipes</button>
+                  <button onClick={() => nav('search')} style={{marginTop:16,padding:'10px 24px',borderRadius:12,fontSize:13,fontWeight:700,background: accentBg,color: t.accent,border:'none',cursor:'pointer'}}>Browse Recipes</button>
                 </div>
               )}
             </div>
@@ -4360,7 +5273,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                     <span style={{fontSize:13,fontWeight:600,...t.text}}>{checkedCount} of {totalCount} items</span>
                     <span style={{fontSize:13,fontWeight:700,color: pct === 1 ? '#22c55e' : t.accent}}>{Math.round(pct * 100)}%</span>
                   </div>
-                  <div style={{height:6,borderRadius:3,background: darkMode ? 'rgba(255,255,255,0.06)' : '#E5E7EB',overflow:'hidden'}}>
+                  <div style={{height:6,borderRadius:3,background: borderCol,overflow:'hidden'}}>
                     <div style={{height:'100%',borderRadius:3,width:`${pct * 100}%`,background: pct === 1 ? '#22c55e' : (darkMode ? '#BEFF46' : 'linear-gradient(90deg, #ef4444, #f97316)'),transition:'width 0.4s ease-out'}} />
                   </div>
                 </div>
@@ -4368,14 +5281,26 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             </div>
             {totalCount > 0 ? (
               <div style={{...fcol,gap:20}}>
-                {groupedShoppingList.map(([category, items]) => {
+                {/* Group by toggle */}
+                <div style={{...frow,gap:6,background: subtleBg,borderRadius:10,padding:3}}>
+                  {[['recipe','By Recipe'],['category','By Category']].map(([key, label]) => (
+                    <button key={key} onClick={() => setShopGroupBy(key)}
+                      style={{flex:1,padding:'8px 0',borderRadius:8,fontSize:13,fontWeight:600,border:'none',cursor:'pointer',transition:'all 0.2s',
+                        background: shopGroupBy === key ? (cardBg) : 'transparent',
+                        color: shopGroupBy === key ? (textCol) : (mutedCol),
+                        boxShadow: shopGroupBy === key ? shadowSm : 'none'}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {(shopGroupBy === 'recipe' ? recipeGroupedShoppingList : groupedShoppingList).map(([groupName, items]) => {
                   const catChecked = items.filter(i => i.checked).length;
                   const allChecked = catChecked === items.length;
                   return (
-                  <div key={category}>
+                  <div key={groupName}>
                     <div style={{...frow,justifyContent:'space-between',marginBottom:S.tight}}>
-                      <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.5px',color: allChecked ? '#22c55e' : (darkMode ? '#6B7280' : '#9CA3AF')}}>
-                        {allChecked ? '✓ ' : ''}{category}
+                      <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.5px',color: allChecked ? '#22c55e' : (mutedCol)}}>
+                        {allChecked ? '✓ ' : ''}{groupName}
                       </span>
                       <span style={{fontSize:11,fontWeight:600,...t.textMuted}}>{catChecked}/{items.length}</span>
                     </div>
@@ -4385,17 +5310,17 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                         return (
                           <div key={globalIdx}
                             style={{...frow,gap:S.gap,padding:'13px 16px',
-                              borderTop: i > 0 ? `1px solid ${darkMode ? 'rgba(255,255,255,0.04)' : '#F3F4F6'}` : 'none',
+                              borderTop: i > 0 ? `1px solid ${subtleBg2}` : 'none',
                               opacity: item.checked ? 0.4 : 1,transition:'opacity 0.25s'}}>
                             <button onClick={() => toggleShoppingItem(globalIdx)}
-                              style={{width:22,height:22,borderRadius:6,border: item.checked ? 'none' : `2px solid ${darkMode ? 'rgba(255,255,255,0.15)' : '#D1D5DB'}`,
-                                background: item.checked ? (darkMode ? '#BEFF46' : '#22c55e') : 'none',...fc,flexShrink:0,cursor:'pointer',transition:'all 0.2s'}}>
+                              style={{width:22,height:22,borderRadius:6,border: item.checked ? 'none' : `2px solid ${borderHeavy}`,
+                                background: item.checked ? (darkMode ? t.accent : '#22c55e') : 'none',...fc,flexShrink:0,cursor:'pointer',transition:'all 0.2s'}}>
                               {item.checked && <span style={{fontSize:13,color: darkMode ? '#0C0F14' : '#fff',fontWeight:700}}>✓</span>}
                             </button>
                             <span style={{flex:1,fontSize:15,fontWeight: item.checked ? 400 : 500,
                               textDecoration: item.checked ? 'line-through' : 'none',
-                              color: item.checked ? (darkMode ? '#4B5563' : '#9CA3AF') : (darkMode ? '#F9FAFB' : '#111827')}}>
-                              {item.amount} {item.item}
+                              color: item.checked ? (darkMode ? '#4B5563' : '#9CA3AF') : (textCol)}}>
+                              {item.amount} {item.item || item.name}
                             </span>
                             <button onClick={() => { const newList = shoppingList.filter((_, idx) => idx !== globalIdx); setShoppingList(newList); saveToStorage('shopping-list', newList); }}
                               style={{padding:4,background:'none',border:'none',cursor:'pointer',opacity:0.4}}>
@@ -4417,13 +5342,13 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               </div>
             ) : (
               <div className="text-center" style={{padding:'48px 20px'}}>
-                <div style={{width:80,height:80,borderRadius:20,background: darkMode ? 'rgba(92,164,255,0.08)' : 'rgba(37,99,235,0.06)',...fc,margin:'0 auto 16px'}}>
-                  <ShoppingCart style={{width:36,height:36,color: darkMode ? '#5CA4FF' : '#2563eb',opacity:0.6}} />
+                <div style={{width:80,height:80,borderRadius:20,background: blueBg,...fc,margin:'0 auto 16px'}}>
+                  <ShoppingCart style={{width:36,height:36,color: blueCol,opacity:0.6}} />
                 </div>
                 <p className="font-bold" style={{fontSize:16,...t.text}}>Shopping list is empty</p>
                 <p style={{fontSize:13,marginTop:6,maxWidth:260,margin:'6px auto 0',...t.textMuted}}>Open a recipe and tap "Add to Shopping" to get started</p>
                 <button onClick={() => { setShowShoppingList(false); nav('search'); }}
-                  style={{marginTop:16,padding:'10px 24px',borderRadius:R.card,fontSize:13,fontWeight:700,background: darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.06)',color: t.accent,border:'none',cursor:'pointer'}}>
+                  style={{marginTop:16,padding:'10px 24px',borderRadius:R.card,fontSize:13,fontWeight:700,background: accentBg,color: t.accent,border:'none',cursor:'pointer'}}>
                   Find Recipes →
                 </button>
               </div>
@@ -4434,22 +5359,15 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
 
         {/* ==================== SETTINGS ==================== */}
         {showSettings && (() => {
-          const SectionHead = ({ icon, title }) => (
-            <div style={{...frow,gap:10,paddingBottom:12,borderBottom:`1px solid ${darkMode ? 'rgba(255,255,255,0.06)' : '#F3F4F6'}`,marginBottom:16}}>
-              <span style={{fontSize:18}}>{icon}</span>
-              <h3 className={`font-bold ${textClass}`} style={{fontSize:16}}>{title}</h3>
-            </div>
-          );
           return (
           <div style={{...fcol,gap:24}}>
             <h2 className={`text-2xl font-bold ${textClass}`}>Settings</h2>
 
             {/* Profile */}
             {onboardingDone && userProfile.name && (
-              <div className={`${cardClass} border rounded-2xl`} style={{padding:'20px'}}>
-                <SectionHead icon="👤" title="Profile" />
+              <SettingsCard icon="👤" title="Profile">
                 <div style={{...frow,gap:14}}>
-                  <div style={{width:48,height:48,borderRadius:R.card,background: darkMode ? 'rgba(190,255,70,0.08)' : '#F3F4F6',...fc,fontSize:22,flexShrink:0}}>
+                  <div style={{width:48,height:48,borderRadius:R.card,background: accentBgAlt,...fc,fontSize:22,flexShrink:0}}>
                     {userProfile.name?.charAt(0)?.toUpperCase() || '?'}
                   </div>
                   <div style={{flex:1}}>
@@ -4459,28 +5377,58 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   <button onClick={() => { setOnboardingDone(false); setOnboardingStep(0); setShowSettings(false); saveToStorage('onboarding-done', false); }}
                     style={{fontSize:13,fontWeight:600,color: t.accent,background:'none',border:'none',cursor:'pointer'}}>Edit</button>
                 </div>
-              </div>
+              </SettingsCard>
             )}
 
+            {/* Account */}
+            <SettingsCard icon="🔐" title="Account">
+              {authUser ? (
+                <div style={{...fcol,gap:12}}>
+                  <div style={{...frow,gap:12}}>
+                    <div style={{width:40,height:40,borderRadius:10,background: isPro ? `linear-gradient(135deg, ${t.accent}, ${t.accentMuted})` : (accentBgAlt),...fc,fontSize:16,fontWeight:700,flexShrink:0,
+                      color: isPro ? rootBg : t.accent}}>
+                      {isPro ? '⭐' : (authUser.email?.[0]?.toUpperCase() || '?')}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontSize:14,fontWeight:600,...t.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{authUser.email}</p>
+                      <p style={{fontSize:12,...t.textMuted}}>{isPro ? 'Pro Member' : 'Free Plan'}</p>
+                    </div>
+                  </div>
+                  {!isPro && (
+                    <button onClick={handleUpgrade} disabled={upgrading}
+                      style={{width:'100%',padding:'12px',borderRadius:12,fontSize:14,fontWeight:700,border:'none',cursor:'pointer',
+                        background: gradientBtn,color: gradientBtnCol,boxShadow: gradientShadow}}>
+                      {upgrading ? 'Redirecting...' : '⚡ Upgrade to Pro — $4.99/mo'}
+                    </button>
+                  )}
+                  <button onClick={handleLogout}
+                    style={{width:'100%',padding:'10px',borderRadius:10,fontSize:13,fontWeight:600,border:`1px solid ${borderCol}`,background:'transparent',cursor:'pointer',...t.textMuted}}>
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <div style={{...fcol,gap:10}}>
+                  <p style={{fontSize:13,...t.textMuted}}>Sign in to sync your data across devices and unlock Pro features.</p>
+                  <button onClick={() => { setShowSettings(false); setShowAuthModal(true); }}
+                    style={{width:'100%',padding:'12px',borderRadius:12,fontSize:14,fontWeight:700,border:'none',cursor:'pointer',
+                      background: gradientBtn,color: gradientBtnCol,boxShadow: gradientShadow}}>
+                    Sign In / Sign Up
+                  </button>
+                </div>
+              )}
+            </SettingsCard>
+
             {/* Recipe Preferences */}
-            <div className={`${cardClass} border rounded-2xl`} style={{padding:'20px'}}>
-              <SectionHead icon="🍳" title="Recipe Preferences" />
-              <div style={{...fcol,gap:20}}>
+            <SettingsCard icon="🍳" title="Recipe Preferences">
                 <div>
                   <h4 className={`font-semibold ${textClass} mb-2`} style={{fontSize:13}}>Dietary Restrictions</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo', 'Low-Carb', 'Halal', 'Kosher', 'Pescatarian'].map(option => (
-                      <button key={option} onClick={() => toggleDietary(option)} className={`px-4 py-2 rounded-full text-sm font-medium transition ${preferences.dietary.includes(option) ? chipActiveClass : chipClass}`}>{option}</button>
-                    ))}
-                  </div>
+                  <ChipGroup options={['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo', 'Low-Carb', 'Halal', 'Kosher', 'Pescatarian']}
+                    selected={preferences.dietary} onToggle={toggleDietary} />
                 </div>
                 <div>
                   <h4 className={`font-semibold ${textClass} mb-2`} style={{fontSize:13}}>Cuisine Preferences</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['Italian', 'Mexican', 'Chinese', 'Japanese', 'Indian', 'Thai', 'Mediterranean', 'American', 'French', 'Korean', 'Vietnamese', 'Greek'].map(cuisine => (
-                      <button key={cuisine} onClick={() => toggleCuisine(cuisine)} className={`px-4 py-2 rounded-full text-sm font-medium transition ${preferences.cuisines.includes(cuisine) ? chipActiveClass : chipClass}`}>{cuisine}</button>
-                    ))}
-                  </div>
+                  <ChipGroup options={['Italian', 'Mexican', 'Chinese', 'Japanese', 'Indian', 'Thai', 'Mediterranean', 'American', 'French', 'Korean', 'Vietnamese', 'Greek']}
+                    selected={preferences.cuisines} onToggle={toggleCuisine} />
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
                   <div>
@@ -4502,13 +5450,10 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+            </SettingsCard>
 
             {/* Safety & Units */}
-            <div className={`${cardClass} border rounded-2xl`} style={{padding:'20px'}}>
-              <SectionHead icon="🛡️" title="Safety & Units" />
-              <div style={{...fcol,gap:20}}>
+            <SettingsCard icon="🛡️" title="Safety & Units">
                 <div>
                   <h4 className={`font-semibold ${textClass} mb-1`} style={{fontSize:13}}>Allergen Alerts</h4>
                   <p className={`text-xs ${textMutedClass} mb-3`}>We'll warn you when recipes contain these</p>
@@ -4532,31 +5477,34 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                     ))}
                   </div>
                 </div>
-              </div>
-            </div>
+                <div>
+                  <h4 className={`font-semibold ${textClass} mb-1`} style={{fontSize:13}}>Recipe Language</h4>
+                  <p className={`text-xs ${textMutedClass} mb-3`}>AI-generated recipes, ingredients, and instructions will appear in this language</p>
+                  <ChipGroup options={['English', 'Español', 'Français', 'Deutsch', 'Italiano', 'Português', '中文', '日本語', '한국어', 'العربية', 'हिन्दी', 'Tiếng Việt', 'ไทย', 'Русский', 'Türkçe', 'Polski', 'Nederlands', 'Filipino']}
+                    selected={language} onToggle={(lang) => { setLanguage(lang); saveToStorage('language', lang); }} multi={false} />
+                </div>
+            </SettingsCard>
 
             {/* Data & Storage */}
-            <div className={`${cardClass} border rounded-2xl`} style={{padding:'20px'}}>
-              <SectionHead icon="💾" title="Data & Storage" />
-              <div style={{...fcol,gap:16}}>
+            <SettingsCard icon="💾" title="Data & Storage">
                 <div>
                   <h4 className={`font-semibold ${textClass} mb-2`} style={{fontSize:13}}>Backup</h4>
                   <div className="flex gap-2">
-                    <button onClick={exportData} className={`flex-1 ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${textClass} rounded-lg py-2.5 text-sm font-semibold transition`}>Export</button>
-                    <label className={`flex-1 ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${textClass} rounded-lg py-2.5 text-sm font-semibold transition text-center cursor-pointer`}>
+                    <button onClick={exportData} className={`flex-1 ${btnSecClass} ${textClass} rounded-lg py-2.5 text-sm font-semibold transition`}>Export</button>
+                    <label className={`flex-1 ${btnSecClass} ${textClass} rounded-lg py-2.5 text-sm font-semibold transition text-center cursor-pointer`}>
                       Import
                       <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
                     </label>
                   </div>
                 </div>
-                <div style={{borderTop:`1px solid ${darkMode ? 'rgba(255,255,255,0.06)' : '#F3F4F6'}`,paddingTop:16}}>
+                <div style={{borderTop:`1px solid ${borderCol}`,paddingTop:16}}>
                   <div style={{...frow,justifyContent:'space-between',marginBottom:8}}>
                     <h4 className={`font-semibold ${textClass}`} style={{fontSize:13}}>API Cache</h4>
                     <button onClick={() => loadCacheStats()} style={{fontSize:11,color: t.accent,fontWeight:600,background:'none',border:'none',cursor:'pointer'}}>Refresh</button>
                   </div>
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {[['text-emerald-500', cacheStats.hits, 'Hits'],['text-orange-500', cacheStats.misses, 'API calls'],[textClass, cacheStats.totalEntries, 'Cached']].map(([col,val,lbl],i) => (
-                      <div key={i} className={`text-center p-2 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}><p className={`text-lg font-bold ${col}`}>{val}</p><p className={`text-xs ${textMutedClass}`}>{lbl}</p></div>
+                      <div key={i} className={`text-center p-2 rounded-lg ${bgSubtleClass}`}><p className={`text-lg font-bold ${col}`}>{val}</p><p className={`text-xs ${textMutedClass}`}>{lbl}</p></div>
                     ))}
                   </div>
                   {cacheStats.hits + cacheStats.misses > 0 && (
@@ -4564,14 +5512,13 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                       {Math.round((cacheStats.hits / (cacheStats.hits + cacheStats.misses)) * 100)}% served from cache this session
                     </p>
                   )}
-                  <button onClick={() => tapConfirm('clear-cache', clearAllCache)} className={`w-full ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${textClass} rounded-lg py-2.5 text-sm font-semibold transition`}>
+                  <button onClick={() => tapConfirm('clear-cache', clearAllCache)} className={`w-full ${btnSecClass} ${textClass} rounded-lg py-2.5 text-sm font-semibold transition`}>
                     {confirmId === 'clear-cache' ? 'Tap again to confirm' : 'Clear Cache'}
                   </button>
                 </div>
-              </div>
-            </div>
+            </SettingsCard>
 
-            <button onClick={() => setShowSettings(false)} className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl p-4 font-semibold transition">Done</button>
+            <CTAButton onClick={() => setShowSettings(false)}>Done</CTAButton>
           </div>
           );
         })()}
@@ -4622,7 +5569,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                       <div className="w-full flex flex-col justify-end h-20">
-                        <div className={`w-full rounded-t-md ${d.date === trackerDate ? 'bg-gradient-to-t from-red-500 to-orange-400' : darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} style={{ height: `${h}%` }} />
+                        <div className={`w-full rounded-t-md ${d.date === trackerDate ? 'bg-gradient-to-t from-red-500 to-orange-400' : bgMidClass}`} style={{ height: `${h}%` }} />
                       </div>
                       <span className={`text-[10px] ${d.date === trackerDate ? 'text-orange-500 font-bold' : textMutedClass}`}>{d.day}</span>
                     </div>
@@ -4650,7 +5597,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowManualLog(false)} className={`flex-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'} ${textClass} rounded-xl py-3 font-semibold`}>Cancel</button>
+                  <button onClick={() => setShowManualLog(false)} className={`flex-1 ${bgSubtle2Class} ${textClass} rounded-xl py-3 font-semibold`}>Cancel</button>
                   <button onClick={addManualEntry} className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl py-3 font-bold">Add</button>
                 </div>
               </div>
@@ -4663,7 +5610,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               ) : (
                 <div className="space-y-2">
                   {todayLog.map((entry) => (
-                    <div key={entry.id} className={`flex items-center gap-3 p-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                    <div key={entry.id} className={`flex items-center gap-3 p-3 rounded-xl ${bgSubtleClass}`}>
                       <div className="flex-1 min-w-0">
                         <p className={`font-semibold ${textClass} truncate`}>{entry.name}</p>
                         <p className={`text-xs ${textMutedClass}`}>{entry.time} — {entry.calories} cal • {entry.protein}p • {entry.carbs}c • {entry.fat}f</p>
@@ -4694,7 +5641,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                     <button onClick={scanMealPhoto} disabled={scanningMeal} className="card-hover w-full bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl p-4 font-bold flex items-center justify-center gap-2 shadow-lg">
                       {scanningMeal ? <><Loader2 className="w-5 h-5 animate-spin" /> Analyzing...</> : <><Search className="w-5 h-5" /> Analyze Nutrition</>}
                     </button>
-                    <button onClick={() => setMealScanImage(null)} className={`w-full ${darkMode ? 'bg-gray-800' : 'bg-gray-100'} ${textClass} rounded-2xl p-3 font-semibold`}>Retake Photo</button>
+                    <button onClick={() => setMealScanImage(null)} className={`w-full ${bgSubtle2Class} ${textClass} rounded-2xl p-3 font-semibold`}>Retake Photo</button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -4723,7 +5670,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                   <h3 className={`font-bold text-lg ${textClass} mb-1`}>{mealScanResult.meal_name}</h3>
                   <div className="grid grid-cols-4 gap-2 mt-4 mb-4">
                     {[['calories', 'Cal', 'from-red-500 to-orange-500'], ['protein', 'Protein', 'from-blue-500 to-sky-500'], ['carbs', 'Carbs', 'from-emerald-500 to-teal-500'], ['fat', 'Fat', 'from-violet-500 to-purple-500']].map(([key, label, grad]) => (
-                      <div key={key} className={`text-center p-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                      <div key={key} className={`text-center p-3 rounded-xl ${bgSubtleClass}`}>
                         <p className={`text-lg font-extrabold bg-gradient-to-r ${grad} bg-clip-text text-transparent`}>{mealScanResult.total?.[key] || 0}{key !== 'calories' ? 'g' : ''}</p>
                         <p className={`text-xs ${textMutedClass}`}>{label}</p>
                       </div>
@@ -4742,7 +5689,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                 <button onClick={logScannedMeal} className="card-hover w-full bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl p-4 font-bold shadow-lg">
                   Log This Meal ({mealScanResult.total?.calories || 0} cal)
                 </button>
-                <button onClick={() => { setMealScanResult(null); setMealScanImage(null); }} className={`w-full ${darkMode ? 'bg-gray-800' : 'bg-gray-100'} ${textClass} rounded-2xl p-3 font-semibold`}>Try Another Photo</button>
+                <button onClick={() => { setMealScanResult(null); setMealScanImage(null); }} className={`w-full ${bgSubtle2Class} ${textClass} rounded-2xl p-3 font-semibold`}>Try Another Photo</button>
               </div>
             )}
             {error && <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">{error}</div>}
@@ -4790,7 +5737,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                       <div key={i} style={{flex:1,...fcol,alignItems:'center',gap:4}}>
                         <span style={{fontSize:11,fontWeight:700,...t.text}}>{w.meals || ''}</span>
                         <div style={{width:'100%',height:`${h}%`,minHeight:4,borderRadius:'4px 4px 0 0',
-                          background: isCurrent ? (darkMode ? '#BEFF46' : '#EF4444') : (darkMode ? 'rgba(190,255,70,0.25)' : 'rgba(239,68,68,0.25)'),
+                          background: isCurrent ? (t.accent) : (accentBgStrong),
                           transition:'height 0.5s ease'}} />
                         <span style={{fontSize:11,...t.textMuted}}>{w.label}</span>
                       </div>
@@ -4811,7 +5758,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                       <div key={cuisine} style={{...frow,gap:10}}>
                         <span style={{fontSize:13,fontWeight:600,width:80,textAlign:'right',...t.text}}>{cuisine}</span>
                         <div style={{flex:1,height:20,borderRadius:6,background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',overflow:'hidden'}}>
-                          <div style={{height:'100%',width:`${pct}%`,borderRadius:6,background: i === 0 ? (darkMode ? '#BEFF46' : '#EF4444') : (darkMode ? 'rgba(190,255,70,0.4)' : 'rgba(239,68,68,0.4)'),transition:'width 0.5s ease'}} />
+                          <div style={{height:'100%',width:`${pct}%`,borderRadius:6,background: i === 0 ? (t.accent) : (darkMode ? 'rgba(190,255,70,0.4)' : 'rgba(239,68,68,0.4)'),transition:'width 0.5s ease'}} />
                         </div>
                         <span style={{fontSize:11,fontWeight:700,width:24,...t.textMuted}}>{count}</span>
                       </div>
@@ -4838,12 +5785,12 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             </div>
             {scanHistory.length === 0 ? (
               <div className="text-center" style={{padding:'40px 20px'}}>
-                <div style={{width:72,height:72,borderRadius:18,background: darkMode ? 'rgba(190,255,70,0.06)' : 'rgba(239,68,68,0.04)',...fc,margin:'0 auto 16px'}}>
+                <div style={{width:72,height:72,borderRadius:18,background: accentBgSoft,...fc,margin:'0 auto 16px'}}>
                   <Camera style={{width:32,height:32,color: t.accent,opacity:0.5}} />
                 </div>
                 <p className="font-bold" style={{fontSize:16,...t.text}}>No scans yet</p>
                 <p style={{fontSize:13,marginTop:6,maxWidth:240,margin:'6px auto 0',...t.textMuted}}>Your ingredient scans will appear here</p>
-                <button onClick={() => { setShowScanHistory(false); setStep('capture'); }} style={{marginTop:16,padding:'10px 24px',borderRadius:12,fontSize:13,fontWeight:700,background: darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.06)',color: t.accent,border:'none',cursor:'pointer'}}>Scan Ingredients</button>
+                <button onClick={() => { setShowScanHistory(false); setStep('capture'); }} style={{marginTop:16,padding:'10px 24px',borderRadius:12,fontSize:13,fontWeight:700,background: accentBg,color: t.accent,border:'none',cursor:'pointer'}}>Scan Ingredients</button>
               </div>
             ) : (
               <div style={{...fcol,gap:10}}>
@@ -4855,7 +5802,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
                     </div>
                     <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                       {(scan.ingredients || []).slice(0, 8).map((ing, j) => (
-                        <span key={j} style={{fontSize:11,fontWeight:600,padding:'4px 10px',borderRadius:8,background: darkMode ? 'rgba(190,255,70,0.06)' : 'rgba(239,68,68,0.04)',color: t.accent}}>{ing}</span>
+                        <span key={j} style={{fontSize:11,fontWeight:600,padding:'4px 10px',borderRadius:8,background: accentBgSoft,color: t.accent}}>{ing}</span>
                       ))}
                       {(scan.ingredients || []).length > 8 && <span style={{fontSize:11,padding:'4px 10px',borderRadius:8,...t.textMuted}}>+{scan.ingredients.length - 8} more</span>}
                     </div>
@@ -4901,7 +5848,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             </div>
             <div className="flex gap-2 mt-3">
               <button onClick={() => shareRecipe(shareCardRecipe)} style={{flex:1,padding:'14px 0',borderRadius:R.card,fontSize:15,fontWeight:700,border:'none',cursor:'pointer',background:'#22C55E',color:'#111827'}}>Share</button>
-              <button onClick={() => setShareCardRecipe(null)} style={{flex:1,padding:'14px 0',borderRadius:R.card,fontSize:15,fontWeight:600,border:'none',cursor:'pointer',background: darkMode ? '#FFFFFF' : '#111827',color: darkMode ? '#111827' : '#FFFFFF'}}>Close</button>
+              <button onClick={() => setShareCardRecipe(null)} style={{flex:1,padding:'14px 0',borderRadius:R.card,fontSize:15,fontWeight:600,border:'none',cursor:'pointer',background: whiteTextCol,color: darkTextCol}}>Close</button>
             </div>
           </div>
         </div>
@@ -4914,7 +5861,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             <div key={t.id} style={{pointerEvents:'auto'}} className={`${t.removing ? 'toast-out' : 'toast-in'} flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-lg ${
               t.type === 'error'
                 ? 'bg-red-600/90 text-white'
-                : darkMode ? 'bg-gray-800/95 text-gray-100 border border-gray-700' : 'bg-white/95 text-gray-900 border border-gray-200'
+                : toastClass
             }`}>
               <span className="text-sm font-semibold">{t.message}</span>
               {t.undoAction && (
@@ -4983,12 +5930,12 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
             </div>
             {savedRecipes.length === 0 && recipeHistory.length === 0 ? (
               <div className="text-center" style={{padding:'40px 20px'}}>
-                <div style={{width:72,height:72,borderRadius:18,background: darkMode ? 'rgba(92,164,255,0.08)' : 'rgba(37,99,235,0.06)',...fc,margin:'0 auto 16px'}}>
-                  <Calendar style={{width:32,height:32,color: darkMode ? '#5CA4FF' : '#2563eb',opacity:0.6}} />
+                <div style={{width:72,height:72,borderRadius:18,background: blueBg,...fc,margin:'0 auto 16px'}}>
+                  <Calendar style={{width:32,height:32,color: blueCol,opacity:0.6}} />
                 </div>
                 <p className="font-bold" style={{fontSize:15,...t.text}}>No recipes to plan with</p>
                 <p style={{fontSize:13,marginTop:6,maxWidth:240,margin:'6px auto 0',...t.textMuted}}>Search for recipes and save your favorites first, then come back to plan your meals</p>
-                <button onClick={() => { setShowMealPicker(null); setStep('search'); }} style={{marginTop:16,padding:'10px 24px',borderRadius:12,fontSize:13,fontWeight:700,background: darkMode ? 'rgba(190,255,70,0.08)' : 'rgba(239,68,68,0.06)',color: t.accent,border:'none',cursor:'pointer'}}>Find Recipes →</button>
+                <button onClick={() => { setShowMealPicker(null); setStep('search'); }} style={{marginTop:16,padding:'10px 24px',borderRadius:12,fontSize:13,fontWeight:700,background: accentBg,color: t.accent,border:'none',cursor:'pointer'}}>Find Recipes →</button>
               </div>
             ) : (
               <div className="space-y-2">
@@ -5026,7 +5973,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
       {onboardingDone && !cookMode && !showFullImage && (
         <div className={`fixed bottom-0 left-0 right-0 z-50 border-t`}
           style={{background: darkMode ? 'rgba(12,15,20,0.95)' : 'rgba(255,255,255,0.97)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', borderColor: darkMode ? 'rgba(255,255,255,0.05)' : '#E5E7EB',
-            boxShadow: darkMode ? '0 -4px 20px rgba(0,0,0,0.3)' : '0 -2px 16px rgba(0,0,0,0.04)'}}>
+            boxShadow: tabShadow}}>
           <div role="navigation" aria-label="Main navigation" className="max-w-2xl mx-auto flex items-center justify-around" style={{padding:'6px 0 max(6px, env(safe-area-inset-bottom))'}}>
             {[
               { action: () => { reset(); }, icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>, label: 'Home', active: step === 'home' && !showSaved && !showShoppingList && !showSettings && !showTracker && !showStats && !showScanHistory },
@@ -5038,7 +5985,7 @@ Return ONLY a JSON array of ${totalMeals} objects (Day1 ${mealSlots[0]}, Day1 ${
               const accentColor = t.accent;
               return (
                 <button key={i} onClick={tab.action} aria-label={tab.label} aria-current={tab.active ? 'page' : undefined} className="flex flex-col items-center transition" style={{padding:'6px 14px',minWidth:56,gap:3,borderRadius:12,
-                  background: tab.active ? (darkMode ? 'rgba(190,255,70,0.06)' : 'rgba(239,68,68,0.04)') : 'transparent'}}>
+                  background: tab.active ? (accentBgSoft) : 'transparent'}}>
                   <div style={{color: tab.active ? accentColor : inactiveCol, transition:'color 0.2s, transform 0.2s', transform: tab.active ? 'scale(1.1)' : 'scale(1)'}}>{tab.icon}</div>
                   <span style={{fontSize:11,fontWeight:tab.active ? 700 : 500,color: tab.active ? accentColor : inactiveCol,letterSpacing:'0.2px'}}>{tab.label}</span>
                   <div style={{width: tab.active ? 4 : 0, height: tab.active ? 4 : 0, borderRadius:2, background: accentColor, transition:'all 0.3s ease-out'}} />
